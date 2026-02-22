@@ -1,8 +1,9 @@
 /**
  * Capitalizes pronouns (He, Him, His, Himself) when they refer to God or Jesus
- * in Bible JSON data. Processes verse-by-verse: only verses that contain
- * a divine referent (God, Yahweh, Lord, Jesus, Christ, Holy Spirit) get
- * pronoun capitalization.
+ * in Bible JSON data. Processes verse-by-verse: verses that contain a divine
+ * referent (God, Yahweh, Lord, Jesus, Christ, Holy Spirit, the Son) get pronoun
+ * capitalization; also the verse immediately after a divine-referent verse gets
+ * capitalization (continuation of subject).
  */
 
 const fs = require('fs');
@@ -13,7 +14,7 @@ const OT_FILE = path.join(DATA_DIR, 'old-testament-data.json');
 const NT_FILE = path.join(DATA_DIR, 'new-testament-data.json');
 
 // Divine referents - verses containing these get pronoun capitalization
-const DIVINE_REFERENT_REGEX = /\b(God|Yahweh|Jesus|Christ|Holy Spirit|Spirit of God|the Lord)\b/i;
+const DIVINE_REFERENT_REGEX = /\b(God|Yahweh|Jesus|Christ|Holy Spirit|Spirit of God|the Lord|the Son)\b/i;
 
 // Word-boundary regexes for pronouns (lowercase) - we replace with capitalized
 const PRONOUN_REPLACEMENTS = [
@@ -32,6 +33,7 @@ function processContent(content) {
   const parts = content.split(verseRegex);
 
   let result = '';
+  let previousVerseHadDivine = false;
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
     // Check if this part is a verse number (e.g. "     [1] ")
@@ -44,8 +46,9 @@ function processContent(content) {
       result += part;
       continue;
     }
-    // If this verse text contains a divine referent, capitalize pronouns
-    if (DIVINE_REFERENT_REGEX.test(part)) {
+    const thisVerseHasDivine = DIVINE_REFERENT_REGEX.test(part);
+    // Capitalize if this verse has a divine referent OR the previous verse did (continuation)
+    if (thisVerseHasDivine || previousVerseHadDivine) {
       let verseText = part;
       for (const [regex, replacement] of PRONOUN_REPLACEMENTS) {
         verseText = verseText.replace(regex, replacement);
@@ -54,6 +57,7 @@ function processContent(content) {
     } else {
       result += part;
     }
+    previousVerseHadDivine = thisVerseHasDivine;
   }
 
   return result;
