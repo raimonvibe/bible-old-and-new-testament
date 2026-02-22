@@ -1,0 +1,26 @@
+{
+  "name": "Holy Bible Reader - Old & New Testament",
+  "short_name": "Holy Bible",
+  "description": "Read the complete Holy Bible with a beautiful, modern interface - Old and New Testament",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f1e8",
+  "theme_color": "#7d6e56",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["education", "books", "lifestyle"],
+  "lang": "en-US"
+}

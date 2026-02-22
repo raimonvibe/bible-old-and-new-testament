@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply text-beige-900 font-serif;
+    background: linear-gradient(135deg, #f5f1e8 0%, #e8dcc8 25%, #d4c5a9 50%, #e8dcc8 75%, #f5f1e8 100%);
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .bg-beige-gradient {
+    background: linear-gradient(135deg, #f5f1e8 0%, #e8dcc8 25%, #d4c5a9 50%, #e8dcc8 75%, #f5f1e8 100%);
+  }
+
+  .bg-beige-gradient-dark {
+    background: linear-gradient(135deg, #e8dcc8 0%, #d4c5a9 25%, #c5b494 50%, #d4c5a9 75%, #e8dcc8 100%);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
