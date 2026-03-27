@@ -83,6 +83,15 @@ const HUMAN_PHRASE_REPLACEMENTS = [
   [' the beginning of His kingdom ', ' the beginning of his kingdom '],
 ];
 
+// Regex replacements for common "missed because punctuation/plural" cases.
+// Kept narrow on purpose to avoid accidentally lowercasing truly-divine referents.
+const HUMAN_REGEX_REPLACEMENTS = [
+  // Only targets lowercase kinship nouns so we don't touch "His Father" etc.
+  // Examples fixed: "Judah and His brothers." -> "his brothers."
+  // Still preserved: "His Father" (capital F) remains unchanged.
+  [/\bHis (brother|brothers|sister|sisters|father|mother|parents|wife|wives|son|sons|daughter|daughters)\b/g, 'his $1'],
+];
+
 function processContent(content) {
   if (!content || typeof content !== 'string') return content;
 
@@ -107,6 +116,11 @@ function processContent(content) {
   // Apply human-referent phrase replacements (order: list order, longer first in list)
   for (const [from, to] of HUMAN_PHRASE_REPLACEMENTS) {
     result = result.split(from).join(to);
+  }
+
+  // Catch remaining human-referent cases missed by exact-string matching (punctuation, plural, line/verse boundaries)
+  for (const [regex, replacement] of HUMAN_REGEX_REPLACEMENTS) {
+    result = result.replace(regex, replacement);
   }
 
   return result;
