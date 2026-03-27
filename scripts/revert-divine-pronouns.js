@@ -24,13 +24,16 @@ const REVERT_REPLACEMENTS = [
   [/\bHe\b/g, 'he'],
 ];
 
-function processContent(content) {
+function processContentWithStats(content) {
   if (!content || typeof content !== 'string') return content;
   let result = content;
+  let changeCount = 0;
   for (const [regex, replacement] of REVERT_REPLACEMENTS) {
+    const matches = result.match(regex);
+    if (matches) changeCount += matches.length;
     result = result.replace(regex, replacement);
   }
-  return result;
+  return { result, changeCount };
 }
 
 function processFile(filePath) {
@@ -38,12 +41,20 @@ function processFile(filePath) {
   const raw = fs.readFileSync(filePath, 'utf8');
   const data = JSON.parse(raw);
 
-  let chapterCount = 0;
+  let processedChapters = 0;
+  let changedChapters = 0;
+  let totalChanges = 0;
   for (const book of data.books || []) {
     for (const chapter of book.chapters || []) {
       if (chapter.content) {
-        chapter.content = processContent(chapter.content);
-        chapterCount++;
+        processedChapters++;
+        const before = chapter.content;
+        const { result, changeCount } = processContentWithStats(before);
+        if (result !== before) {
+          chapter.content = result;
+          changedChapters++;
+          totalChanges += changeCount;
+        }
       }
     }
   }
@@ -51,7 +62,7 @@ function processFile(filePath) {
   if (!DRY_RUN) {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
   }
-  console.log(`  Updated ${chapterCount} chapters.`);
+  console.log(`  Processed ${processedChapters} chapters; changed ${changedChapters} chapters (${totalChanges} replacements).`);
 }
 
 function main() {

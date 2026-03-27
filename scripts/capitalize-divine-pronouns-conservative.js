@@ -27,12 +27,13 @@ const PRONOUN_REPLACEMENTS = [
   [/\bhimself\b/g, 'Himself'],
 ];
 
-function processContent(content) {
+function processContentWithStats(content) {
   if (!content || typeof content !== 'string') return content;
 
   const verseRegex = /(\s*\[\d+\]\s*)/g;
   const parts = content.split(verseRegex);
   let result = '';
+  let changeCount = 0;
 
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
@@ -44,6 +45,8 @@ function processContent(content) {
     if (DIVINE_REFERENT_REGEX.test(part)) {
       let verseText = part;
       for (const [regex, replacement] of PRONOUN_REPLACEMENTS) {
+        const matches = verseText.match(regex);
+        if (matches) changeCount += matches.length;
         verseText = verseText.replace(regex, replacement);
       }
       result += verseText;
@@ -52,25 +55,33 @@ function processContent(content) {
     }
   }
 
-  return result;
+  return { result, changeCount };
 }
 
 function processFile(filePath) {
   console.log(`Processing ${path.basename(filePath)}...`);
   const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  let chapterCount = 0;
+  let processedChapters = 0;
+  let changedChapters = 0;
+  let totalChanges = 0;
   for (const book of data.books || []) {
     for (const chapter of book.chapters || []) {
       if (chapter.content) {
-        chapter.content = processContent(chapter.content);
-        chapterCount++;
+        processedChapters++;
+        const before = chapter.content;
+        const { result, changeCount } = processContentWithStats(before);
+        if (result !== before) {
+          chapter.content = result;
+          changedChapters++;
+          totalChanges += changeCount;
+        }
       }
     }
   }
   if (!DRY_RUN) {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
   }
-  console.log(`  Updated ${chapterCount} chapters.`);
+  console.log(`  Processed ${processedChapters} chapters; changed ${changedChapters} chapters (${totalChanges} replacements).`);
 }
 
 function main() {

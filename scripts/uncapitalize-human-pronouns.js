@@ -92,12 +92,13 @@ const HUMAN_REGEX_REPLACEMENTS = [
   [/\bHis (brother|brothers|sister|sisters|father|mother|parents|wife|wives|son|sons|daughter|daughters)\b/g, 'his $1'],
 ];
 
-function processContent(content) {
+function processContentWithStats(content) {
   if (!content || typeof content !== 'string') return content;
 
   const verseRegex = /(\s*\[\d+\]\s*)/g;
   const parts = content.split(verseRegex);
   let result = '';
+  let changeCount = 0;
 
   for (let i = 0; i < parts.length; i++) {
     let part = parts[i];
@@ -107,6 +108,8 @@ function processContent(content) {
     }
     if (!DIVINE_REFERENT_REGEX.test(part)) {
       for (const [regex, replacement] of REVERT_IN_VERSE) {
+        const matches = part.match(regex);
+        if (matches) changeCount += matches.length;
         part = part.replace(regex, replacement);
       }
     }
@@ -115,33 +118,46 @@ function processContent(content) {
 
   // Apply human-referent phrase replacements (order: list order, longer first in list)
   for (const [from, to] of HUMAN_PHRASE_REPLACEMENTS) {
-    result = result.split(from).join(to);
+    if (result.includes(from)) {
+      changeCount += result.split(from).length - 1;
+      result = result.split(from).join(to);
+    }
   }
 
   // Catch remaining human-referent cases missed by exact-string matching (punctuation, plural, line/verse boundaries)
   for (const [regex, replacement] of HUMAN_REGEX_REPLACEMENTS) {
+    const matches = result.match(regex);
+    if (matches) changeCount += matches.length;
     result = result.replace(regex, replacement);
   }
 
-  return result;
+  return { result, changeCount };
 }
 
 function processFile(filePath) {
   console.log(`Processing ${path.basename(filePath)}...`);
   const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  let chapterCount = 0;
+  let processedChapters = 0;
+  let changedChapters = 0;
+  let totalChanges = 0;
   for (const book of data.books || []) {
     for (const chapter of book.chapters || []) {
       if (chapter.content) {
-        chapter.content = processContent(chapter.content);
-        chapterCount++;
+        processedChapters++;
+        const before = chapter.content;
+        const { result, changeCount } = processContentWithStats(before);
+        if (result !== before) {
+          chapter.content = result;
+          changedChapters++;
+          totalChanges += changeCount;
+        }
       }
     }
   }
   if (!DRY_RUN) {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
   }
-  console.log(`  Updated ${chapterCount} chapters.`);
+  console.log(`  Processed ${processedChapters} chapters; changed ${changedChapters} chapters (${totalChanges} changes).`);
 }
 
 function main() {
