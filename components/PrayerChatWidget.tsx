@@ -1,6 +1,14 @@
 'use client';
 import { useEffect } from 'react';
 
+declare global {
+  interface Window {
+    PrayerChat?: {
+      init: (config: { embedCode: string; apiUrl: string }) => void;
+    };
+  }
+}
+
 export default function PrayerChatWidget() {
   const embedCode = 'prayer-chat-bot-BT7VjiGc5krFjOSHWVFQHcqR';
   const baseUrl = 'https://chatbot-java-spring-ai.onrender.com';
@@ -18,8 +26,8 @@ export default function PrayerChatWidget() {
     };
 
     script.onload = function () {
-      if (typeof PrayerChat !== 'undefined' && PrayerChat.init) {
-        PrayerChat.init({
+      if (window.PrayerChat?.init) {
+        window.PrayerChat.init({
           embedCode: embedCode,
           apiUrl: baseUrl + '/api'
         });
