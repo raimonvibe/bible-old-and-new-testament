@@ -2,33 +2,29 @@
 import { useEffect } from 'react';
 
 export default function PrayerChatWidget() {
-  useEffect(() => {
-    const embedCode = 'prayer-chat-bot-BT7VjiGc5krFjOSHWVFQHcqR';
-    const baseUrl = 'https://chatbot-java-spring-ai.onrender.com';
+  const embedCode = 'prayer-chat-bot-BT7VjiGc5krFjOSHWVFQHcqR';
+  const baseUrl = 'https://chatbot-java-spring-ai.onrender.com';
 
+  useEffect(() => {
     const script = document.createElement('script');
     script.src = baseUrl + '/js/chatbot-widget.js';
     script.async = true;
 
-    script.onerror = function() {
-      const el = document.getElementById('prayer-chat-chatbot-' + embedCode) 
-        || document.querySelector(' ');
-      
+    script.onerror = () => {
+      const el = document.getElementById('prayer-chat-chatbot-' + embedCode);
       if (el) {
-        el.innerHTML = '<p style="padding:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;font-family:sans-serif;font-size:14px;">Chat could not load. Check browser console (F12) or Content-Security-Policy.</p>';
+        el.innerHTML = '<p style="padding:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;font-family:sans-serif;font-size:14px;">Chat could not load. Check browser console (F12).</p>';
       }
     };
 
-    script.onload = function() {
+    script.onload = () => {
       if (typeof PrayerChat !== 'undefined' && PrayerChat.init) {
-        PrayerChat.init({ 
-          embedCode: embedCode, 
-          apiUrl: baseUrl + '/api' 
+        PrayerChat.init({
+          embedCode: embedCode,
+          apiUrl: baseUrl + '/api'
         });
       } else {
-        const el = document.getElementById('prayer-chat-chatbot-' + embedCode) 
-          || document.querySelector(' ');
-        
+        const el = document.getElementById('prayer-chat-chatbot-' + embedCode);
         if (el) {
           el.innerHTML = '<p style="padding:12px;background:#f8d7da;border:1px solid #f5c6cb;border-radius:8px;font-family:sans-serif;font-size:14px;">Chat failed to start. Open console (F12) for details.</p>';
         }
@@ -39,9 +35,9 @@ export default function PrayerChatWidget() {
   }, []);
 
   return (
-    <div 
-      id="prayer-chat-chatbot-prayer-chat-bot-BT7VjiGc5krFjOSHWVFQHcqR" 
-      data-embed-code="prayer-chat-bot-BT7VjiGc5krFjOSHWVFQHcqR"
+    <div
+      id={'prayer-chat-chatbot-' + embedCode}
+      data-embed-code={embedCode}
       suppressHydrationWarning={true}
     />
   );
