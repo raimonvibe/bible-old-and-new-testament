@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import PrayerChatWidget from '@/PrayerChatbot';
+import PrayerChatWidget from '../components/PrayerChatWidget'
 
 export const metadata: Metadata = {
   title: 'Holy Bible Reader - Old & New Testament',
