@@ -1,65 +1,65 @@
-'use client';
-import { useEffect } from 'react';
+// 'use client';
+// import { useEffect } from 'react';
 
-declare global {
-  interface Window {
-    PrayerChat?: {
-      init: (config: { embedCode: string; apiUrl: string }) => void;
-    };
-  }
-}
+// declare global {
+//   interface Window {
+//     PrayerChat?: {
+//       init: (config: { embedCode: string; apiUrl: string }) => void;
+//     };
+//   }
+// }
 
-export default function PrayerChatWidget() {
-  const embedCode = 'prayer-chat-bot-AFRYqOfuwVzC37nT8FF2ntDf';
-  const baseUrl = 'https://chatbot-java-spring-ai.onrender.com';
+// export default function PrayerChatWidget() {
+//   const embedCode = 'prayer-chat-bot-AFRYqOfuwVzC37nT8FF2ntDf';
+//   const baseUrl = 'https://chatbot-java-spring-ai.onrender.com';
 
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = `${baseUrl}/js/chatbot-widget.js`;
-    script.async = true;
+//   useEffect(() => {
+//     const script = document.createElement('script');
+//     script.src = `${baseUrl}/js/chatbot-widget.js`;
+//     script.async = true;
 
-    script.onerror = () => {
-      const el =
-        document.getElementById('prayer-chat-chatbot-' + embedCode) ||
-        document.querySelector(`[data-embed-code="${embedCode}"]`);
+//     script.onerror = () => {
+//       const el =
+//         document.getElementById('prayer-chat-chatbot-' + embedCode) ||
+//         document.querySelector(`[data-embed-code="${embedCode}"]`);
 
-      if (el) {
-        el.innerHTML =
-          '<p style="padding:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;font-family:sans-serif;font-size:14px;">Chat could not load. Check browser console (F12) or Content-Security-Policy.</p>';
-      }
-    };
+//       if (el) {
+//         el.innerHTML =
+//           '<p style="padding:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;font-family:sans-serif;font-size:14px;">Chat could not load. Check browser console (F12) or Content-Security-Policy.</p>';
+//       }
+//     };
 
-    script.onload = () => {
-      if (window.PrayerChat?.init) {
-        window.PrayerChat.init({
-          embedCode,
-          apiUrl: `${baseUrl}/api`,
-        });
-      } else {
-        const el =
-          document.getElementById('prayer-chat-chatbot-' + embedCode) ||
-          document.querySelector(`[data-embed-code="${embedCode}"]`);
+//     script.onload = () => {
+//       if (window.PrayerChat?.init) {
+//         window.PrayerChat.init({
+//           embedCode,
+//           apiUrl: `${baseUrl}/api`,
+//         });
+//       } else {
+//         const el =
+//           document.getElementById('prayer-chat-chatbot-' + embedCode) ||
+//           document.querySelector(`[data-embed-code="${embedCode}"]`);
 
-        if (el) {
-          el.innerHTML =
-            '<p style="padding:12px;background:#f8d7da;border:1px solid #f5c6cb;border-radius:8px;font-family:sans-serif;font-size:14px;">Chat failed to start. Open console (F12) for details.</p>';
-        }
-      }
-    };
+//         if (el) {
+//           el.innerHTML =
+//             '<p style="padding:12px;background:#f8d7da;border:1px solid #f5c6cb;border-radius:8px;font-family:sans-serif;font-size:14px;">Chat failed to start. Open console (F12) for details.</p>';
+//         }
+//       }
+//     };
 
-    document.head.appendChild(script);
+//     document.head.appendChild(script);
 
-    return () => {
-      // Optional cleanup if component unmounts
-      if (script.parentNode) script.parentNode.removeChild(script);
-    };
-  }, []);
+//     return () => {
+//       // Optional cleanup if component unmounts
+//       if (script.parentNode) script.parentNode.removeChild(script);
+//     };
+//   }, []);
 
-  return (
-    <div
-      id={'prayer-chat-chatbot-' + embedCode}
-      data-embed-code={embedCode}
-      suppressHydrationWarning={true}
-    />
-  );
-}
+//   return (
+//     <div
+//       id={'prayer-chat-chatbot-' + embedCode}
+//       data-embed-code={embedCode}
+//       suppressHydrationWarning={true}
+//     />
+//   );
+// }
