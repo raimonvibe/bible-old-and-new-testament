@@ -104,20 +104,75 @@ export function getReadableChunks(root: HTMLElement): ReadChunk[] {
   return chunks
 }
 
-export function getSelectionChunk(): ReadChunk | null {
-  const selection = window.getSelection()
-  if (!selection || selection.isCollapsed) return null
+type CachedSelection = {
+  text: string
+  element: HTMLElement
+}
 
+/** Last non-empty selection inside #main-content (survives toolbar clicks). */
+let selectionCache: CachedSelection | null = null
+
+function elementFromNode(node: Node | null | undefined): HTMLElement {
+  if (!node) return document.body
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    const el = node as HTMLElement
+    return (
+      el.closest<HTMLElement>(`${BLOCK_SELECTOR}, ${READABLE_SELECTOR}, .verse`) ??
+      el
+    )
+  }
+  const parent = node.parentElement
+  return (
+    parent?.closest<HTMLElement>(`${BLOCK_SELECTOR}, ${READABLE_SELECTOR}, .verse`) ??
+    parent ??
+    document.body
+  )
+}
+
+function selectionInMain(selection: Selection, root: HTMLElement): boolean {
+  if (!selection.rangeCount) return false
+  return root.contains(selection.getRangeAt(0).commonAncestorContainer)
+}
+
+function chunkFromSelection(selection: Selection): ReadChunk | null {
   const text = selection.toString().replace(/\s+/g, ' ').trim()
   if (!text) return null
-
-  const anchor = selection.anchorNode?.parentElement
-  const element =
-    anchor?.closest<HTMLElement>(`${BLOCK_SELECTOR}, ${READABLE_SELECTOR}, .verse`) ??
-    anchor ??
-    document.body
-
+  const element = elementFromNode(selection.focusNode ?? selection.anchorNode)
   return { index: 0, text, element }
+}
+
+/** Call on selectionchange so toolbar clicks can still read the last highlight. */
+export function updateSelectionCache(): void {
+  const root = document.getElementById('main-content')
+  const selection = window.getSelection()
+  if (!root || !selection || selection.isCollapsed || !selection.rangeCount) return
+  if (!selectionInMain(selection, root)) return
+
+  const chunk = chunkFromSelection(selection)
+  if (!chunk) return
+
+  selectionCache = { text: chunk.text, element: chunk.element }
+}
+
+export function getSelectionChunk(): ReadChunk | null {
+  const root = document.getElementById('main-content')
+  const selection = window.getSelection()
+
+  if (root && selection && !selection.isCollapsed && selection.rangeCount) {
+    if (selectionInMain(selection, root)) {
+      const live = chunkFromSelection(selection)
+      if (live) {
+        selectionCache = { text: live.text, element: live.element }
+        return live
+      }
+    }
+  }
+
+  if (selectionCache) {
+    return { index: 0, text: selectionCache.text, element: selectionCache.element }
+  }
+
+  return null
 }
 
 export function clearChunkHighlights(root: HTMLElement) {
