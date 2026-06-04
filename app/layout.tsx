@@ -1,7 +1,10 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { ThemeProvider } from '@/components/ThemeProvider'
 import ViewportInsetsProvider from '@/components/ViewportInsetsProvider'
 import ReadAloudToolbar from '@/components/ReadAloudToolbar'
+
+const themeInitScript = `(function(){try{var t=localStorage.getItem('bible-theme');var d=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();`
 // import PrayerChatWidget from '../components/PrayerChatWidget'
 
 export const metadata: Metadata = {
@@ -52,11 +55,16 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'Holy Bible',
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f5f1e8' },
+    { media: '(prefers-color-scheme: dark)', color: '#2c1f14' },
+  ],
 }
 
 export default function RootLayout({
@@ -65,15 +73,18 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
       </head>
       <body>
         <ViewportInsetsProvider />
-        <main id="main-content">{children}</main>
+        <main id="main-content">
+          <ThemeProvider>{children}</ThemeProvider>
+        </main>
         <ReadAloudToolbar />
         {/* <PrayerChatWidget /> */}
       </body>

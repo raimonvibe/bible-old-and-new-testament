@@ -117,19 +117,19 @@ export default function ReadAloudToolbar() {
 
         {open && (
           <div
-            className="listen-panel fixed-viewport-panel overflow-hidden rounded-2xl border border-beige-300/80 bg-white/95 shadow-xl backdrop-blur-xl animate-listen-panel-in"
+            className="listen-panel fixed-viewport-panel overflow-hidden rounded-2xl border border-beige-300/80 bg-white/95 shadow-xl backdrop-blur-xl dark:border-brown-600/50 dark:bg-brown-900/95 animate-listen-panel-in"
             role="region"
             aria-label="Listen to this page"
           >
             <div className="listen-panel-header px-4 py-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Volume2 className="h-5 w-5 text-beige-100" aria-hidden />
+                  <Volume2 className="h-5 w-5 text-beige-100 dark:text-brown-100" aria-hidden />
                   <div>
-                    <p className="text-sm font-semibold font-sans text-beige-50">
+                    <p className="text-sm font-semibold font-sans text-beige-50 dark:text-brown-50">
                       Listen
                     </p>
-                    <p className="text-xs font-sans text-beige-200/80">
+                    <p className="text-xs font-sans text-beige-200/80 dark:text-brown-300/80">
                       Powered by your browser
                     </p>
                   </div>
@@ -137,7 +137,7 @@ export default function ReadAloudToolbar() {
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="flex min-h-10 min-w-10 items-center justify-center rounded-full text-beige-100/80 transition-colors hover:bg-white/10"
+                  className="flex min-h-10 min-w-10 items-center justify-center rounded-full text-beige-100/80 transition-colors hover:bg-white/10 dark:text-brown-200/80"
                   aria-label="Close listen panel"
                 >
                   <X className="h-4 w-4" />
@@ -152,7 +152,7 @@ export default function ReadAloudToolbar() {
                   {[0, 1, 2, 3, 4].map((i) => (
                     <span
                       key={i}
-                      className={`listen-wave w-1 rounded-full bg-beige-200 ${
+                      className={`listen-wave w-1 rounded-full bg-beige-200 dark:bg-brown-300 ${
                         status === 'playing' ? 'listen-wave-active' : ''
                       }`}
                       style={{ animationDelay: `${i * 0.12}s` }}
@@ -166,7 +166,7 @@ export default function ReadAloudToolbar() {
               {hint && (
                 <p
                   role="status"
-                  className="rounded-xl border border-amber-300/80 bg-amber-50 px-3 py-2 text-xs font-sans text-amber-900"
+                  className="rounded-xl border border-amber-300/80 bg-amber-50 px-3 py-2 text-xs font-sans text-amber-900 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-100"
                 >
                   {hint}
                 </p>
@@ -174,7 +174,7 @@ export default function ReadAloudToolbar() {
 
               {isActive && (
                 <div className="space-y-1">
-                  <div className="flex justify-between text-xs font-sans text-beige-600">
+                  <div className="flex justify-between text-xs font-sans text-beige-600 dark:text-brown-400">
                     <span>Progress</span>
                     <span>
                       {chunks.length > 0
@@ -182,7 +182,7 @@ export default function ReadAloudToolbar() {
                         : '—'}
                     </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-beige-200">
+                  <div className="h-2 overflow-hidden rounded-full bg-beige-200 dark:bg-brown-700">
                     <div
                       className="h-full listen-progress-bar transition-all duration-300"
                       style={{ width: `${progress}%` }}
@@ -200,7 +200,7 @@ export default function ReadAloudToolbar() {
                   type="button"
                   onClick={() => skip(-1)}
                   disabled={!isActive || currentIndex === 0}
-                  className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-beige-300 text-beige-800 transition-colors hover:border-beige-500 disabled:opacity-40"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-beige-300 text-beige-800 transition-colors hover:border-beige-500 disabled:opacity-40 dark:border-brown-600 dark:text-brown-100 dark:hover:border-brown-400"
                   aria-label="Previous section"
                 >
                   <SkipBack className="h-4 w-4" />
@@ -229,7 +229,7 @@ export default function ReadAloudToolbar() {
                   type="button"
                   onClick={() => skip(1)}
                   disabled={!isActive || currentIndex >= chunks.length - 1}
-                  className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-beige-300 text-beige-800 transition-colors hover:border-beige-500 disabled:opacity-40"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-beige-300 text-beige-800 transition-colors hover:border-beige-500 disabled:opacity-40 dark:border-brown-600 dark:text-brown-100 dark:hover:border-brown-400"
                   aria-label="Next section"
                 >
                   <SkipForward className="h-4 w-4" />
@@ -239,7 +239,7 @@ export default function ReadAloudToolbar() {
                   type="button"
                   onClick={stop}
                   disabled={!isActive}
-                  className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-beige-300 text-beige-800 transition-colors hover:border-beige-500 disabled:opacity-40"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-beige-300 text-beige-800 transition-colors hover:border-beige-500 disabled:opacity-40 dark:border-brown-600 dark:text-brown-100 dark:hover:border-brown-400"
                   aria-label="Stop reading"
                 >
                   <Square className="h-4 w-4" />
@@ -253,7 +253,7 @@ export default function ReadAloudToolbar() {
                   className={`min-h-11 rounded-xl px-3 text-xs font-medium font-sans transition-colors ${
                     mode === 'page' && isActive
                       ? 'listen-play-btn text-white'
-                      : 'border border-beige-300 bg-beige-50 text-beige-800 hover:border-beige-500'
+                      : 'border border-beige-300 bg-beige-50 text-beige-800 hover:border-beige-500 dark:border-brown-600 dark:bg-brown-800/60 dark:text-brown-100 dark:hover:border-brown-400'
                   }`}
                 >
                   Read full page
@@ -265,16 +265,16 @@ export default function ReadAloudToolbar() {
                   className={`min-h-11 rounded-xl px-3 text-xs font-medium font-sans transition-colors ${
                     mode === 'selection' && isActive
                       ? 'listen-play-btn text-white'
-                      : 'border border-beige-300 bg-beige-50 text-beige-800 hover:border-beige-500'
+                      : 'border border-beige-300 bg-beige-50 text-beige-800 hover:border-beige-500 dark:border-brown-600 dark:bg-brown-800/60 dark:text-brown-100 dark:hover:border-brown-400'
                   }`}
                 >
                   Read selection
                 </button>
               </div>
 
-              <div className="space-y-3 border-t border-beige-200 pt-3">
+              <div className="space-y-3 border-t border-beige-200 pt-3 dark:border-brown-700">
                 <label className="block">
-                  <span className="mb-1 flex items-center gap-1 text-xs font-medium font-sans text-beige-700">
+                  <span className="mb-1 flex items-center gap-1 text-xs font-medium font-sans text-beige-700 dark:text-brown-300">
                     <Gauge className="h-3.5 w-3.5" />
                     Speed
                   </span>
@@ -286,8 +286,8 @@ export default function ReadAloudToolbar() {
                         onClick={() => setRate(s)}
                         className={`min-h-9 min-w-[3rem] rounded-lg px-2 text-xs font-medium font-sans transition-colors ${
                           rate === s
-                            ? 'bg-beige-800 text-beige-50'
-                            : 'bg-beige-100 text-beige-800 hover:bg-beige-200'
+                            ? 'bg-beige-800 text-beige-50 dark:bg-brown-200 dark:text-brown-950'
+                            : 'bg-beige-100 text-beige-800 hover:bg-beige-200 dark:bg-brown-800 dark:text-brown-100 dark:hover:bg-brown-700'
                         }`}
                       >
                         {s}×
@@ -297,13 +297,13 @@ export default function ReadAloudToolbar() {
                 </label>
 
                 <label className="block">
-                  <span className="mb-1 text-xs font-medium font-sans text-beige-700">
+                  <span className="mb-1 text-xs font-medium font-sans text-beige-700 dark:text-brown-300">
                     Voice
                   </span>
                   <select
                     value={voiceURI}
                     onChange={(e) => setVoiceURI(e.target.value)}
-                    className="w-full min-h-11 rounded-xl border border-beige-300 bg-white px-3 text-xs font-sans text-beige-900 focus:border-beige-600 focus:outline-none focus:ring-2 focus:ring-beige-400/30"
+                    className="w-full min-h-11 rounded-xl border border-beige-300 bg-white px-3 text-xs font-sans text-beige-900 focus:border-beige-600 focus:outline-none focus:ring-2 focus:ring-beige-400/30 dark:border-brown-600 dark:bg-brown-800 dark:text-brown-50 dark:focus:border-brown-400 dark:focus:ring-brown-400/30"
                     aria-label="Reading voice"
                   >
                     {voices.map((v) => (
@@ -315,7 +315,7 @@ export default function ReadAloudToolbar() {
                 </label>
 
                 <label className="block">
-                  <span className="mb-1 flex justify-between text-xs font-medium font-sans text-beige-700">
+                  <span className="mb-1 flex justify-between text-xs font-medium font-sans text-beige-700 dark:text-brown-300">
                     <span>Pitch</span>
                     <span>{pitch.toFixed(1)}</span>
                   </span>
@@ -332,7 +332,7 @@ export default function ReadAloudToolbar() {
                 </label>
 
                 <label className="block">
-                  <span className="mb-1 flex justify-between text-xs font-medium font-sans text-beige-700">
+                  <span className="mb-1 flex justify-between text-xs font-medium font-sans text-beige-700 dark:text-brown-300">
                     <span>Volume</span>
                     <span>{Math.round(volume * 100)}%</span>
                   </span>
@@ -349,7 +349,7 @@ export default function ReadAloudToolbar() {
                 </label>
               </div>
 
-              <p className="text-center text-[10px] leading-relaxed font-sans text-beige-500">
+              <p className="text-center text-[10px] leading-relaxed font-sans text-beige-500 dark:text-brown-500">
                 Highlight text first for &ldquo;Read selection&rd;. Shortcuts: Alt+R
                 play/pause · Alt+S stop
               </p>
@@ -368,7 +368,7 @@ export default function ReadAloudToolbar() {
         >
           {isActive && status === 'playing' && (
             <span
-              className="absolute inset-0 animate-ping rounded-full bg-beige-400/30"
+              className="absolute inset-0 animate-ping rounded-full bg-beige-400/30 dark:bg-brown-400/30"
               aria-hidden
             />
           )}
@@ -377,9 +377,9 @@ export default function ReadAloudToolbar() {
           ) : status === 'paused' ? (
             <Play className="relative h-6 w-6 translate-x-0.5 text-white" />
           ) : (
-            <Headphones className="relative h-6 w-6 text-beige-50 transition-transform group-hover:scale-105" />
+            <Headphones className="relative h-6 w-6 text-beige-50 transition-transform group-hover:scale-105 dark:text-brown-100" />
           )}
-          <span className="absolute -right-1 -top-1 flex h-5 items-center rounded-full bg-white px-1.5 text-[9px] font-bold uppercase tracking-wide text-beige-800 shadow-sm">
+          <span className="absolute -right-1 -top-1 flex h-5 items-center rounded-full bg-white px-1.5 text-[9px] font-bold uppercase tracking-wide text-beige-800 shadow-sm dark:bg-brown-100 dark:text-brown-900">
             Listen
           </span>
         </button>

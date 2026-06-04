@@ -9,12 +9,10 @@ interface BookSelectorProps {
 }
 
 export default function BookSelector({ books, selectedBookId, onSelectBook }: BookSelectorProps) {
-  // New Testament book IDs
   const ntBookIds = ['MAT', 'MRK', 'LUK', 'JHN', 'ACT', 'ROM', '1CO', '2CO', 'GAL', 'EPH',
                      'PHP', 'COL', '1TH', '2TH', '1TI', '2TI', 'TIT', 'PHM', 'HEB', 'JAS',
                      '1PE', '2PE', '1JN', '2JN', '3JN', 'JUD', 'REV']
 
-  // Split books into Old and New Testament
   const oldTestamentBooks = books.filter(book => !ntBookIds.some(id => book.id.includes(id)))
   const newTestamentBooks = books.filter(book => ntBookIds.some(id => book.id.includes(id)))
 
@@ -31,15 +29,22 @@ export default function BookSelector({ books, selectedBookId, onSelectBook }: Bo
             text-left hover:scale-105 hover:shadow-lg
             ${
               selectedBookId === book.id
-                ? 'bg-beige-gradient-dark text-white shadow-lg scale-105'
-                : 'bg-white/70 hover:bg-white text-beige-800'
+                ? 'bg-selection-gradient text-white shadow-lg scale-105'
+                : 'btn-surface hover:shadow-md'
             }
           `}
         >
           <div className="font-display font-semibold text-sm md:text-base mb-1">
             {book.name}
           </div>
-          <div className={`text-xs ${selectedBookId === book.id ? 'text-beige-100' : 'text-beige-600'}`} aria-hidden="true">
+          <div
+            className={`text-xs ${
+              selectedBookId === book.id
+                ? 'text-beige-100 dark:text-brown-100'
+                : 'text-beige-600 dark:text-brown-400'
+            }`}
+            aria-hidden="true"
+          >
             {book.chapters.length} chapter{book.chapters.length !== 1 ? 's' : ''}
           </div>
         </button>
@@ -49,19 +54,15 @@ export default function BookSelector({ books, selectedBookId, onSelectBook }: Bo
 
   return (
     <div className="space-y-8">
-      {/* Old Testament Section */}
-      <section
-        data-read-aloud-block
-        className="bg-beige-100/80 backdrop-blur-sm rounded-2xl shadow-xl p-4 md:p-6 lg:p-8"
-      >
-        <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-beige-300">
+      <section data-read-aloud-block className="card-surface p-4 md:p-6 lg:p-8">
+        <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-beige-300 dark:border-brown-700">
           <div className="flex items-center gap-3">
-            <ScrollText className="w-7 h-7 md:w-8 md:h-8 text-amber-700" aria-hidden="true" />
+            <ScrollText className="w-7 h-7 md:w-8 md:h-8 text-amber-700 dark:text-amber-500" aria-hidden="true" />
             <div>
-              <h2 className="text-2xl md:text-3xl font-display font-bold text-beige-800">
+              <h2 className="text-2xl md:text-3xl font-display font-bold text-beige-800 dark:text-brown-50">
                 Old Testament
               </h2>
-              <p className="text-sm text-beige-600 font-sans mt-1">
+              <p className="text-sm text-beige-600 dark:text-brown-400 font-sans mt-1">
                 {oldTestamentBooks.length} books • {oldTestamentBooks.reduce((sum, book) => sum + book.chapters.length, 0)} chapters
               </p>
             </div>
@@ -73,19 +74,15 @@ export default function BookSelector({ books, selectedBookId, onSelectBook }: Bo
         </nav>
       </section>
 
-      {/* New Testament Section */}
-      <section
-        data-read-aloud-block
-        className="bg-beige-100/80 backdrop-blur-sm rounded-2xl shadow-xl p-4 md:p-6 lg:p-8"
-      >
-        <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-beige-300">
+      <section data-read-aloud-block className="card-surface p-4 md:p-6 lg:p-8">
+        <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-beige-300 dark:border-brown-700">
           <div className="flex items-center gap-3">
-            <Book className="w-7 h-7 md:w-8 md:h-8 text-blue-700" aria-hidden="true" />
+            <Book className="w-7 h-7 md:w-8 md:h-8 text-blue-700 dark:text-blue-400" aria-hidden="true" />
             <div>
-              <h2 className="text-2xl md:text-3xl font-display font-bold text-beige-800">
+              <h2 className="text-2xl md:text-3xl font-display font-bold text-beige-800 dark:text-brown-50">
                 New Testament
               </h2>
-              <p className="text-sm text-beige-600 font-sans mt-1">
+              <p className="text-sm text-beige-600 dark:text-brown-400 font-sans mt-1">
                 {newTestamentBooks.length} books • {newTestamentBooks.reduce((sum, book) => sum + book.chapters.length, 0)} chapters
               </p>
             </div>

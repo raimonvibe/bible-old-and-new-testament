@@ -24,14 +24,11 @@ export default function ChapterSelector({
   onBack,
 }: ChapterSelectorProps) {
   return (
-    <section
-      data-read-aloud-block
-      className="bg-beige-100/80 backdrop-blur-sm rounded-2xl shadow-xl p-4 md:p-6 lg:p-8"
-    >
+    <section data-read-aloud-block className="card-surface p-4 md:p-6 lg:p-8">
       <button
         data-read-aloud-ignore
         onClick={onBack}
-        className="flex items-center gap-2 text-beige-700 hover:text-beige-900 mb-6 transition-colors group"
+        className="flex items-center gap-2 text-beige-700 hover:text-beige-900 dark:text-brown-300 dark:hover:text-brown-50 mb-6 transition-colors group"
         aria-label="Go back to book selection"
       >
         <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" aria-hidden="true" />
@@ -39,8 +36,8 @@ export default function ChapterSelector({
       </button>
 
       <div className="flex items-center gap-3 mb-6">
-        <BookOpen className="w-6 h-6 md:w-7 md:h-7 text-beige-700" aria-hidden="true" />
-        <h2 className="text-2xl md:text-3xl font-display font-bold text-beige-800">
+        <BookOpen className="w-6 h-6 md:w-7 md:h-7 text-beige-700 dark:text-brown-300" aria-hidden="true" />
+        <h2 className="text-2xl md:text-3xl font-display font-bold text-beige-800 dark:text-brown-50">
           {bookName}
         </h2>
       </div>
@@ -59,8 +56,8 @@ export default function ChapterSelector({
                 hover:scale-110 hover:shadow-lg
                 ${
                   selectedChapterId === chapter.id
-                    ? 'bg-beige-gradient-dark text-white shadow-lg scale-110'
-                    : 'bg-white/70 hover:bg-white text-beige-800'
+                    ? 'bg-selection-gradient text-white shadow-lg scale-110'
+                    : 'btn-surface hover:shadow-md'
                 }
               `}
             >

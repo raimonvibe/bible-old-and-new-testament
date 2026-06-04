@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import BookSelector from '@/components/BookSelector'
 import ChapterSelector from '@/components/ChapterSelector'
 import BibleReader from '@/components/BibleReader'
+import ThemeToggle from '@/components/ThemeToggle'
 import { BookMarked, Heart } from 'lucide-react'
 
 interface Chapter {
@@ -50,8 +51,8 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <BookMarked className="w-16 h-16 text-beige-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-beige-700 font-sans text-lg">Loading the Bible...</p>
+          <BookMarked className="w-16 h-16 text-beige-600 dark:text-brown-400 mx-auto mb-4 animate-pulse" />
+          <p className="text-beige-700 dark:text-brown-200 font-sans text-lg">Loading the Bible...</p>
         </div>
       </div>
     )
@@ -144,16 +145,23 @@ export default function Home() {
 
   return (
     <div className="min-h-screen py-6 md:py-10 px-4 md:px-6 lg:px-8">
+      <div
+        className="fixed top-4 right-4 z-40"
+        data-read-aloud-ignore
+      >
+        <ThemeToggle />
+      </div>
+
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <header data-read-aloud-ignore className="text-center mb-8 md:mb-12">
           <div className="inline-flex items-center gap-3 mb-4">
-            <BookMarked className="w-10 h-10 md:w-12 md:h-12 text-beige-700" />
+            <BookMarked className="w-10 h-10 md:w-12 md:h-12 text-beige-700 dark:text-brown-300" />
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-beige-800 mb-3">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-beige-800 dark:text-brown-50 mb-3">
             The Holy Bible
           </h1>
-          <p className="text-beige-600 font-sans text-base md:text-lg max-w-2xl mx-auto">
+          <p className="text-beige-600 dark:text-brown-300 font-sans text-base md:text-lg max-w-2xl mx-auto">
             Read the complete Old and New Testament from the {bibleData.bibleName} in a beautiful,
             modern interface
           </p>
@@ -194,13 +202,13 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <footer data-read-aloud-ignore className="text-center text-beige-600 font-sans text-sm md:text-base py-8">
+        <footer data-read-aloud-ignore className="text-center text-beige-600 dark:text-brown-400 font-sans text-sm md:text-base py-8">
           <div className="flex items-center justify-center gap-2 mb-2">
             <span>Made with</span>
-            <Heart className="w-4 h-4 fill-beige-600" />
+            <Heart className="w-4 h-4 fill-beige-600 dark:fill-brown-400" />
             <span>for Bible readers</span>
           </div>
-          <p className="text-beige-500 text-xs md:text-sm">
+          <p className="text-beige-500 dark:text-brown-500 text-xs md:text-sm">
             {bibleData.bibleName} • {bibleData.books.length} Books •{' '}
             {bibleData.books.reduce((sum, book) => sum + book.chapters.length, 0)} Chapters
           </p>

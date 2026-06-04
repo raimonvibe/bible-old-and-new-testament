@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, ArrowLeft, Eye, EyeOff, Home } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Eye, EyeOff, Home } from 'lucide-react'
 
 interface Chapter {
   id: string
@@ -93,15 +93,15 @@ export default function BibleReader({
   )
 
   return (
-    <article className="bg-beige-100/80 backdrop-blur-sm rounded-2xl shadow-xl p-4 md:p-6 lg:p-10">
+    <article className="card-surface p-4 md:p-6 lg:p-10">
       <nav
         data-read-aloud-ignore
-        className="flex items-center gap-2 text-sm text-beige-600 mb-4 font-sans"
+        className="flex items-center gap-2 text-sm text-beige-600 dark:text-brown-400 mb-4 font-sans"
         aria-label="Breadcrumb"
       >
         <button
           onClick={onBackToBooks}
-          className="hover:text-beige-900 transition-colors flex items-center gap-1"
+          className="hover:text-beige-900 dark:hover:text-brown-50 transition-colors flex items-center gap-1"
           aria-label="Go to home"
         >
           <Home className="w-4 h-4" />
@@ -110,32 +110,25 @@ export default function BibleReader({
         <span>/</span>
         <button
           onClick={onBack}
-          className="hover:text-beige-900 transition-colors"
+          className="hover:text-beige-900 dark:hover:text-brown-50 transition-colors"
           aria-label="Go back to chapter list"
         >
           {bookName}
         </button>
         <span>/</span>
-        <span className="text-beige-800 font-medium">Chapter {chapter.number}</span>
+        <span className="text-beige-800 dark:text-brown-200 font-medium">Chapter {chapter.number}</span>
       </nav>
 
       <div
         data-read-aloud-ignore
-        className="flex items-center justify-between mb-6 pb-4 border-b border-beige-300"
+        className="flex items-center justify-between mb-6 pb-4 border-b border-beige-300 dark:border-brown-700"
       >
         <div className="flex items-center gap-2">
           <button
             onClick={onPrevChapter}
             disabled={!hasPrev}
             aria-label="Go to previous chapter"
-            className={`
-              p-2 rounded-lg transition-all
-              ${
-                hasPrev
-                  ? 'bg-white/70 hover:bg-white text-beige-800 hover:shadow-md'
-                  : 'bg-beige-200/50 text-beige-400 cursor-not-allowed'
-              }
-            `}
+            className={`p-2 rounded-lg transition-all ${hasPrev ? 'btn-surface hover:shadow-md' : 'btn-surface-muted'}`}
           >
             <ChevronLeft className="w-5 h-5" aria-hidden="true" />
           </button>
@@ -144,21 +137,14 @@ export default function BibleReader({
             onClick={onNextChapter}
             disabled={!hasNext}
             aria-label="Go to next chapter"
-            className={`
-              p-2 rounded-lg transition-all
-              ${
-                hasNext
-                  ? 'bg-white/70 hover:bg-white text-beige-800 hover:shadow-md'
-                  : 'bg-beige-200/50 text-beige-400 cursor-not-allowed'
-              }
-            `}
+            className={`p-2 rounded-lg transition-all ${hasNext ? 'btn-surface hover:shadow-md' : 'btn-surface-muted'}`}
           >
             <ChevronRight className="w-5 h-5" aria-hidden="true" />
           </button>
 
           <button
             onClick={onBack}
-            className="ml-2 flex items-center gap-2 px-3 py-2 bg-white/70 hover:bg-white text-beige-800 rounded-lg transition-all hover:shadow-md font-sans text-sm"
+            className="ml-2 flex items-center gap-2 px-3 py-2 btn-surface rounded-lg hover:shadow-md font-sans text-sm"
             aria-label="Select different chapter"
           >
             <span>Ch. {chapter.number}</span>
@@ -167,7 +153,7 @@ export default function BibleReader({
 
         <button
           onClick={() => setShowVerseNumbers(!showVerseNumbers)}
-          className="flex items-center gap-2 px-3 py-2 bg-white/70 hover:bg-white text-beige-800 rounded-lg transition-all hover:shadow-md font-sans text-sm"
+          className="flex items-center gap-2 px-3 py-2 btn-surface rounded-lg hover:shadow-md font-sans text-sm"
           aria-label={showVerseNumbers ? 'Hide verse numbers' : 'Show verse numbers'}
           aria-pressed={showVerseNumbers}
         >
@@ -186,17 +172,17 @@ export default function BibleReader({
       </div>
 
       <div className="mb-8 text-center">
-        <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-beige-800 mb-2">
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-beige-800 dark:text-brown-50 mb-2">
           {chapter.reference}
         </h1>
-        <p className="text-beige-600 font-sans text-sm md:text-base">
+        <p className="text-beige-600 dark:text-brown-400 font-sans text-sm md:text-base">
           {bookName} - Chapter {chapter.number}
         </p>
       </div>
 
-      <div className="prose prose-beige max-w-none mb-8">
+      <div className="prose max-w-none mb-8">
         <div
-          className="text-beige-900 leading-relaxed text-base md:text-lg lg:text-xl"
+          className="text-beige-900 dark:text-brown-100 leading-relaxed text-base md:text-lg lg:text-xl"
           dangerouslySetInnerHTML={{ __html: processedContent }}
           aria-live="polite"
         />
@@ -204,26 +190,21 @@ export default function BibleReader({
 
       <footer
         data-read-aloud-ignore
-        className="flex justify-between items-center pt-6 border-t border-beige-300"
+        className="flex justify-between items-center pt-6 border-t border-beige-300 dark:border-brown-700"
       >
         <button
           onClick={onPrevChapter}
           disabled={!hasPrev}
           aria-label={`Go to previous chapter${hasPrev ? '' : ' (not available)'}`}
-          className={`
-            flex items-center gap-2 px-4 py-3 rounded-xl font-sans font-medium transition-all
-            ${
-              hasPrev
-                ? 'bg-white/70 hover:bg-white text-beige-800 hover:shadow-lg hover:-translate-x-1'
-                : 'bg-beige-200/50 text-beige-400 cursor-not-allowed'
-            }
-          `}
+          className={`flex items-center gap-2 px-4 py-3 rounded-xl font-sans font-medium transition-all ${
+            hasPrev ? 'btn-surface hover:shadow-lg hover:-translate-x-1' : 'btn-surface-muted'
+          }`}
         >
           <ChevronLeft className="w-5 h-5" aria-hidden="true" />
           <span className="hidden sm:inline">Previous</span>
         </button>
 
-        <div className="text-beige-600 font-sans text-sm md:text-base" aria-live="polite">
+        <div className="text-beige-600 dark:text-brown-400 font-sans text-sm md:text-base" aria-live="polite">
           Chapter {chapter.number}
         </div>
 
@@ -231,14 +212,9 @@ export default function BibleReader({
           onClick={onNextChapter}
           disabled={!hasNext}
           aria-label={`Go to next chapter${hasNext ? '' : ' (not available)'}`}
-          className={`
-            flex items-center gap-2 px-4 py-3 rounded-xl font-sans font-medium transition-all
-            ${
-              hasNext
-                ? 'bg-white/70 hover:bg-white text-beige-800 hover:shadow-lg hover:translate-x-1'
-                : 'bg-beige-200/50 text-beige-400 cursor-not-allowed'
-            }
-          `}
+          className={`flex items-center gap-2 px-4 py-3 rounded-xl font-sans font-medium transition-all ${
+            hasNext ? 'btn-surface hover:shadow-lg hover:translate-x-1' : 'btn-surface-muted'
+          }`}
         >
           <span className="hidden sm:inline">Next</span>
           <ChevronRight className="w-5 h-5" aria-hidden="true" />
