@@ -5,7 +5,9 @@ import BookSelector from '@/components/BookSelector'
 import ChapterSelector from '@/components/ChapterSelector'
 import BibleReader from '@/components/BibleReader'
 import ThemeToggle from '@/components/ThemeToggle'
-import { BookMarked, Heart } from 'lucide-react'
+import { BookMarked, Heart, Search } from 'lucide-react'
+import AdvancedSearch from '@/components/AdvancedSearch'
+import type { SearchResult } from '@/lib/bibleSearch'
 
 interface Chapter {
   id: string
@@ -32,6 +34,7 @@ export default function Home() {
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null)
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null)
   const [view, setView] = useState<'books' | 'chapters' | 'reader'>('books')
+  const [searchOpen, setSearchOpen] = useState(false)
 
   useEffect(() => {
     // Load Bible data
@@ -86,6 +89,13 @@ export default function Home() {
   const handleBackToChapters = () => {
     setSelectedChapterId(null)
     setView('chapters')
+  }
+
+  const handleSelectSearchResult = (result: SearchResult) => {
+    setSelectedBookId(result.bookId)
+    setSelectedChapterId(result.chapterId)
+    setView('reader')
+    setSearchOpen(false)
   }
 
   const handlePrevChapter = () => {
@@ -146,11 +156,27 @@ export default function Home() {
   return (
     <div className="min-h-screen py-6 md:py-10 px-4 md:px-6 lg:px-8">
       <div
-        className="fixed top-4 right-4 z-40"
+        className="fixed top-4 right-4 z-40 flex items-center gap-2"
         data-read-aloud-ignore
       >
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          className="flex items-center gap-2 px-3 py-2 btn-surface rounded-lg hover:shadow-md font-sans text-sm"
+          aria-label="Open advanced search"
+        >
+          <Search className="w-4 h-4" />
+          <span className="hidden sm:inline">Search</span>
+        </button>
         <ThemeToggle />
       </div>
+
+      <AdvancedSearch
+        bibleData={bibleData}
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onSelectResult={handleSelectSearchResult}
+      />
 
       <div className="max-w-7xl mx-auto">
         {/* Header */}
