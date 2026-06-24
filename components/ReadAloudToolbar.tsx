@@ -14,9 +14,21 @@ import {
 } from 'lucide-react'
 import FixedViewportLayer from '@/components/FixedViewportLayer'
 import { useReadAloud } from '@/hooks/useReadAloud'
-import { formatVoiceLabel } from '@/lib/readAloud'
+import { formatVoiceLabel, groupVoicesBySource } from '@/lib/readAloud'
 
 const SPEEDS = [0.75, 1, 1.25, 1.5]
+
+const VOICE_SOURCE_OPTIONS = [
+  { value: 'network' as const, label: 'Network' },
+  { value: 'all' as const, label: 'All' },
+  { value: 'local' as const, label: 'Local' },
+]
+
+const VOICE_GENDER_OPTIONS = [
+  { value: 'female' as const, label: 'Female' },
+  { value: 'any' as const, label: 'Any' },
+  { value: 'male' as const, label: 'Male' },
+]
 
 export default function ReadAloudToolbar() {
   const [open, setOpen] = useState(false)
@@ -38,6 +50,10 @@ export default function ReadAloudToolbar() {
     voices,
     voiceURI,
     setVoiceURI,
+    voiceSource,
+    setVoiceSource,
+    voiceGender,
+    setVoiceGender,
     mode,
     start,
     stop,
@@ -298,6 +314,53 @@ export default function ReadAloudToolbar() {
 
                 <label className="block">
                   <span className="mb-1 text-xs font-medium font-sans text-beige-700 dark:text-brown-300">
+                    Voice type
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {VOICE_SOURCE_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setVoiceSource(option.value)}
+                        className={`min-h-9 rounded-lg px-2.5 text-xs font-medium font-sans transition-colors ${
+                          voiceSource === option.value
+                            ? 'bg-beige-800 text-beige-50 dark:bg-brown-200 dark:text-brown-950'
+                            : 'bg-beige-100 text-beige-800 hover:bg-beige-200 dark:bg-brown-800 dark:text-brown-100 dark:hover:bg-brown-700'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1 text-[10px] leading-relaxed font-sans text-beige-500 dark:text-brown-500">
+                    Network voices usually sound clearer than local ones.
+                  </p>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 text-xs font-medium font-sans text-beige-700 dark:text-brown-300">
+                    Voice gender
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {VOICE_GENDER_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setVoiceGender(option.value)}
+                        className={`min-h-9 rounded-lg px-2.5 text-xs font-medium font-sans transition-colors ${
+                          voiceGender === option.value
+                            ? 'bg-beige-800 text-beige-50 dark:bg-brown-200 dark:text-brown-950'
+                            : 'bg-beige-100 text-beige-800 hover:bg-beige-200 dark:bg-brown-800 dark:text-brown-100 dark:hover:bg-brown-700'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 text-xs font-medium font-sans text-beige-700 dark:text-brown-300">
                     Voice
                   </span>
                   <select
@@ -306,12 +369,31 @@ export default function ReadAloudToolbar() {
                     className="w-full min-h-11 rounded-xl border border-beige-300 bg-white px-3 text-xs font-sans text-beige-900 focus:border-beige-600 focus:outline-none focus:ring-2 focus:ring-beige-400/30 dark:border-brown-600 dark:bg-brown-800 dark:text-brown-50 dark:focus:border-brown-400 dark:focus:ring-brown-400/30"
                     aria-label="Reading voice"
                   >
-                    {voices.map((v) => (
-                      <option key={v.voiceURI} value={v.voiceURI}>
-                        {formatVoiceLabel(v)}
-                      </option>
-                    ))}
+                    {voices.length === 0 ? (
+                      <option value="">No voices match these filters</option>
+                    ) : voiceSource === 'all' ? (
+                      groupVoicesBySource(voices).map((group) => (
+                        <optgroup key={group.label} label={group.label}>
+                          {group.voices.map((v) => (
+                            <option key={v.voiceURI} value={v.voiceURI}>
+                              {formatVoiceLabel(v)}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))
+                    ) : (
+                      voices.map((v) => (
+                        <option key={v.voiceURI} value={v.voiceURI}>
+                          {formatVoiceLabel(v)}
+                        </option>
+                      ))
+                    )}
                   </select>
+                  {voices.length === 0 && (
+                    <p className="mt-1 text-[10px] leading-relaxed font-sans text-amber-700 dark:text-amber-300">
+                      Try &ldquo;All&rdquo; voice type or &ldquo;Any&rdquo; gender to see more options.
+                    </p>
+                  )}
                 </label>
 
                 <label className="block">

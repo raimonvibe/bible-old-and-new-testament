@@ -2,14 +2,21 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  applyVoiceFilters,
   clearChunkHighlights,
-  filterVoices,
   getReadableChunks,
   getSelectionChunk,
   highlightChunk,
+  pickDefaultVoice,
   updateSelectionCache,
   type ReadChunk,
+  type VoiceGenderFilter,
+  type VoiceSourceFilter,
 } from '@/lib/readAloud'
+
+const VOICE_URI_KEY = 'read-aloud-voice-uri'
+const VOICE_SOURCE_KEY = 'read-aloud-voice-source'
+const VOICE_GENDER_KEY = 'read-aloud-voice-gender'
 
 export type ReadAloudStatus = 'idle' | 'playing' | 'paused'
 
@@ -28,8 +35,23 @@ export function useReadAloud() {
   const [rate, setRate] = useState(1)
   const [pitch, setPitch] = useState(1)
   const [volume, setVolume] = useState(1)
+  const [allVoices, setAllVoices] = useState<SpeechSynthesisVoice[]>([])
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
   const [voiceURI, setVoiceURI] = useState('')
+  const [voiceSource, setVoiceSourceState] = useState<VoiceSourceFilter>(() => {
+    if (typeof window === 'undefined') return 'network'
+    const saved = localStorage.getItem(VOICE_SOURCE_KEY)
+    return saved === 'all' || saved === 'local' || saved === 'network'
+      ? saved
+      : 'network'
+  })
+  const [voiceGender, setVoiceGenderState] = useState<VoiceGenderFilter>(() => {
+    if (typeof window === 'undefined') return 'female'
+    const saved = localStorage.getItem(VOICE_GENDER_KEY)
+    return saved === 'any' || saved === 'female' || saved === 'male'
+      ? saved
+      : 'female'
+  })
   const [mode, setMode] = useState<ReadMode>('page')
   const [supported, setSupported] = useState(true)
 
@@ -41,11 +63,21 @@ export function useReadAloud() {
     paused: false,
     stopped: true,
   })
-  const settingsRef = useRef({ rate, pitch, volume, voiceURI, voices })
+  const settingsRef = useRef({ rate, pitch, volume, voiceURI })
+  const voiceSourceRef = useRef(voiceSource)
+  const voiceGenderRef = useRef(voiceGender)
 
   useEffect(() => {
-    settingsRef.current = { rate, pitch, volume, voiceURI, voices }
-  }, [rate, pitch, volume, voiceURI, voices])
+    settingsRef.current = { rate, pitch, volume, voiceURI }
+  }, [rate, pitch, volume, voiceURI])
+
+  useEffect(() => {
+    voiceSourceRef.current = voiceSource
+  }, [voiceSource])
+
+  useEffect(() => {
+    voiceGenderRef.current = voiceGender
+  }, [voiceGender])
 
   const getMainRoot = useCallback(() => {
     if (typeof document === 'undefined') return null
@@ -54,11 +86,86 @@ export function useReadAloud() {
     return root
   }, [])
 
+  const syncFilteredVoices = useCallback(
+    (
+      available: SpeechSynthesisVoice[],
+      source: VoiceSourceFilter,
+      gender: VoiceGenderFilter,
+      currentURI: string,
+    ) => {
+      const filtered = applyVoiceFilters(available, source, gender)
+      setVoices(filtered)
+
+      setVoiceURI((current) => {
+        const uri = current || currentURI
+        if (uri && filtered.some((v) => v.voiceURI === uri)) return uri
+
+        const saved =
+          typeof window !== 'undefined'
+            ? localStorage.getItem(VOICE_URI_KEY) ?? undefined
+            : undefined
+        const picked = pickDefaultVoice(filtered, saved)
+        return picked?.voiceURI ?? filtered[0]?.voiceURI ?? ''
+      })
+    },
+    [],
+  )
+
   const loadVoices = useCallback(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return
-    const list = filterVoices(window.speechSynthesis.getVoices())
-    setVoices(list)
-    setVoiceURI((current) => current || list[0]?.voiceURI || '')
+    const available = window.speechSynthesis.getVoices()
+    setAllVoices(available)
+    syncFilteredVoices(
+      available,
+      voiceSourceRef.current,
+      voiceGenderRef.current,
+      settingsRef.current.voiceURI,
+    )
+  }, [syncFilteredVoices])
+
+  const setVoiceSource = useCallback(
+    (source: VoiceSourceFilter) => {
+      setVoiceSourceState(source)
+      voiceSourceRef.current = source
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(VOICE_SOURCE_KEY, source)
+      }
+      syncFilteredVoices(
+        allVoices.length
+          ? allVoices
+          : window.speechSynthesis?.getVoices() ?? [],
+        source,
+        voiceGenderRef.current,
+        settingsRef.current.voiceURI,
+      )
+    },
+    [allVoices, syncFilteredVoices],
+  )
+
+  const setVoiceGender = useCallback(
+    (gender: VoiceGenderFilter) => {
+      setVoiceGenderState(gender)
+      voiceGenderRef.current = gender
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(VOICE_GENDER_KEY, gender)
+      }
+      syncFilteredVoices(
+        allVoices.length
+          ? allVoices
+          : window.speechSynthesis?.getVoices() ?? [],
+        voiceSourceRef.current,
+        gender,
+        settingsRef.current.voiceURI,
+      )
+    },
+    [allVoices, syncFilteredVoices],
+  )
+
+  const setVoiceURIAndSave = useCallback((uri: string) => {
+    setVoiceURI(uri)
+    if (typeof window !== 'undefined' && uri) {
+      localStorage.setItem(VOICE_URI_KEY, uri)
+    }
   }, [])
 
   const stop = useCallback(() => {
@@ -113,15 +220,16 @@ export function useReadAloud() {
       setCurrentIndex(index)
       highlightChunk(chunk.element)
 
-      const { rate: r, pitch: p, volume: v, voiceURI: uri, voices: voiceList } =
-        settingsRef.current
+      const { rate: r, pitch: p, volume: v, voiceURI: uri } = settingsRef.current
 
       const utterance = new SpeechSynthesisUtterance(chunk.text)
       utterance.rate = r
       utterance.pitch = p
       utterance.volume = v
 
-      const voice = voiceList.find((item) => item.voiceURI === uri)
+      const voice = window.speechSynthesis
+        ?.getVoices()
+        .find((item) => item.voiceURI === uri)
       if (voice) utterance.voice = voice
 
       utterance.onend = () => {
@@ -253,7 +361,11 @@ export function useReadAloud() {
     setVolume,
     voices,
     voiceURI,
-    setVoiceURI,
+    setVoiceURI: setVoiceURIAndSave,
+    voiceSource,
+    setVoiceSource,
+    voiceGender,
+    setVoiceGender,
     mode,
     start,
     stop,
