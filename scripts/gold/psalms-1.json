@@ -1,0 +1,12 @@
+{
+  "reference": "Psalms 1",
+  "description": "Pilot — blessed man remains lowercase; no divine He",
+  "mustContain": [
+    "he will be like a tree planted by the streams of water,",
+    "Whatever he does shall prosper."
+  ],
+  "mustNotContain": [
+    "He will be like a tree",
+    "Whatever He does shall prosper"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "reference": "Psalms 23",
+  "description": "Pilot — Yahweh as shepherd; cross-verse divine he/his",
+  "mustContain": [
+    "He makes me lie down in green pastures.",
+    "He guides me in the paths of righteousness for His name’s sake."
+  ],
+  "mustNotContain": [
+    "he makes me lie down in green pastures.",
+    "for his name’s sake."
+  ]
+}

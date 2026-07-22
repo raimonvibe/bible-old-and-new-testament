@@ -1,0 +1,12 @@
+{
+  "reference": "Proverbs 3",
+  "description": "Pilot — Yahweh corrects; human son lowercase",
+  "mustContain": [
+    "for whom Yahweh loves, He corrects,",
+    "My son, don’t forget my teaching,"
+  ],
+  "mustNotContain": [
+    "whom Yahweh loves, he corrects",
+    "My Son, don’t forget"
+  ]
+}

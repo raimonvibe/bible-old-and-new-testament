@@ -1,0 +1,12 @@
+{
+  "reference": "Psalms 46",
+  "description": "Pilot — God as subject in psalm of praise",
+  "mustContain": [
+    "what desolations He has made in the earth.",
+    "He makes wars cease to the end of the earth."
+  ],
+  "mustNotContain": [
+    "what desolations he has made",
+    "he makes wars cease"
+  ]
+}

@@ -39,4 +39,4 @@ Gold chapters: Joshua 1, 7, 8; 1 Kings 8.
 
 ## Next
 
-OT Poetry (Job–Song of Solomon), then Prophets, then the final sentence-initial pass documented in `docs/final-sentence-capitalization-pass.md`.
+OT Prophets (Isaiah–Malachi), then the final sentence-initial pass documented in `docs/final-sentence-capitalization-pass.md`.
