@@ -1,0 +1,14 @@
+{
+  "reference": "Matthew 17",
+  "description": "Pilot — Transfiguration; Moses and Elijah with Him",
+  "mustContain": [
+    "He was changed before them. His face shone like the sun, and His garments became as white as the light.",
+    "Behold, Moses and Elijah appeared to them talking with Him.",
+    "While he was still speaking, behold, a bright cloud overshadowed them."
+  ],
+  "mustNotContain": [
+    "He was changed before them. his face shone like the sun",
+    "talking with him.",
+    "While He was still speaking, behold, a bright cloud overshadowed them."
+  ]
+}

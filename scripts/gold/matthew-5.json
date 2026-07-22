@@ -1,0 +1,12 @@
+{
+  "reference": "Matthew 5",
+  "description": "Pilot — Sermon on the Mount; Jesus teaches His disciples",
+  "mustContain": [
+    "Seeing the multitudes, He went up onto the mountain. When He had sat down, His disciples came to Him.",
+    "He opened His mouth and taught them, saying,"
+  ],
+  "mustNotContain": [
+    "Seeing the multitudes, he went up onto the mountain. When he had sat down, his disciples came to him.",
+    "he opened his mouth and taught them, saying,"
+  ]
+}
