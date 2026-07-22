@@ -1,0 +1,18 @@
+{
+  "reviewOrder": "Genesis → Revelation (canonical)",
+  "books": {
+    "Genesis": {
+      "status": "reviewed",
+      "chapters": 50,
+      "reviewedAt": "2026-07-22",
+      "editCount": 24
+    }
+  },
+  "chapters": {
+    "Genesis 1": {
+      "status": "reviewed",
+      "reviewedAt": "2026-07-22",
+      "edits": 0
+    }
+  }
+}

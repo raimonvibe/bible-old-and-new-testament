@@ -1,0 +1,10 @@
+{
+  "reference": "Genesis 6",
+  "description": "Flood prelude — Yahweh grieves; Cain offering",
+  "mustContain": [
+    "Yahweh was sorry that He had made man on the earth, and it grieved Him in His heart."
+  ],
+  "mustNotContain": [
+    "it grieved him in His heart"
+  ]
+}

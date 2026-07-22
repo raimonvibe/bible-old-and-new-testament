@@ -1,12 +1,18 @@
 {
   "reference": "Genesis 3",
-  "description": "Pilot — Fall; serpent He at sentence start; Yahweh said to him (Adam object)",
+  "description": "Fall — Yahweh speaks; Adam taken from ground; Yahweh drives out",
   "mustContain": [
     "Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to the woman",
-    "Yahweh God called to the man, and said to him, “Where are you?”"
+    "Yahweh God called to the man, and said to him, “Where are you?”",
+    "To the woman He said,",
+    "To Adam He said,",
+    "from which he was taken.",
+    "So He drove out the man; and He placed cherubim"
   ],
   "mustNotContain": [
     "Yahweh God called to the man, and said to Him, “Where are you?”",
-    "serpent was more subtle than any animal of the field which Yahweh God had made. he said to the woman"
+    "from which He was taken.",
+    "So he drove out the man; and he placed cherubim",
+    "To the woman he said,"
   ]
 }
