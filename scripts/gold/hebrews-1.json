@@ -1,0 +1,18 @@
+{
+  "reference": "Hebrews 1",
+  "description": "Son/Father opening — divine pronouns for God and Christ",
+  "mustContain": [
+    "spoken to us by His Son, whom He appointed",
+    "His Son is the radiance of His glory",
+    "when He had by Himself purified us",
+    "did He say",
+    "He makes His angels winds"
+  ],
+  "mustNotContain": [
+    "spoken to us by his Son, whom he appointed",
+    "his Son is the radiance of his glory",
+    "when he had by himself purified us",
+    "did he say at any time",
+    "he makes his angels winds"
+  ]
+}

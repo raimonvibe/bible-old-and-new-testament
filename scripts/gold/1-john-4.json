@@ -1,0 +1,16 @@
+{
+  "reference": "1 John 4",
+  "description": "God's love and Spirit — Him/He for Father and Son",
+  "mustContain": [
+    "greater is He who is in you than He who is in the world",
+    "God has sent His only born Son",
+    "His love has been perfected in us",
+    "He has given us of His Spirit",
+    "We love Him, because He first loved us"
+  ],
+  "mustNotContain": [
+    "he has given us of his Spirit",
+    "We love him, because he first loved us",
+    "remain in him and he in us, because he has given"
+  ]
+}

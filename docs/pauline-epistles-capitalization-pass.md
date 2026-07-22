@@ -31,4 +31,4 @@ Gold chapters: Galatians 5, Ephesians 1, Colossians 1, 2 Timothy 2.
 
 ## Next
 
-Hebrews, James, General epistles, then Gospels.
+Revelation, then Gospels.
