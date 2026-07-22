@@ -42,4 +42,4 @@ Gold chapters: Psalms 1, 23, 46; Proverbs 3; Job 1.
 
 ## Next
 
-OT Prophets (Isaiah–Malachi), then the final sentence-initial pass.
+OT Prophets (Isaiah–Malachi) — see `prophets-capitalization-pass.md`. Next: final sentence-initial pass.

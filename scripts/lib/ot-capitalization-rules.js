@@ -5,7 +5,7 @@
 
 const DIVINE_NAME = /\b(God|Yahweh(?: God)?|the Lord)\b/;
 const HUMAN_OR_CREATURE =
-  /\b(Abram|Abraham|Noah|Moses|Aaron|Adam|Eve|the man|the woman|serpent|Pharaoh|Sarah|Isaac|Jacob|Esau|Lot|Cain|Abel|Seth|Enoch|Methuselah|Lamech|Ham|Shem|Japheth|Hagar|Ishmael|Rebekah|Laban|Joseph|Judah|Benjamin|Leah|Rachel|Dinah|Tamar|Potiphar|Pharaoh's|Midwife|servant girls|angel of Yahweh|Malak|Balaam|Joshua|Caleb|Miriam|Jethro|Zipporah|Gershom|Eliezer|Amalekite|Edomite|Canaanite|Hittite|Hivite|Perizzite|Girgashite|Amorite|Jebusite|Nimrod|Terah|Nahor|Haran|Lot's|Moab|Ben-Ammi|Esau's|Reuben|Simeon|Levi|Dan|Naphtali|Gad|Asher|Issachar|Zebulun|Manasseh|Ephraim| Saul|David|Jonathan|Saul's|Goliath|Samuel|Eli|Hannah|Peninnah|Delilah|Samson|Gideon|Deborah|Barak|Jephthah|Othniel|Ehud|Shamgar|Abimelech|Tola|Jair|Ibzan|Elon|Abdon|Jesse|Eliab|Abinadab|Shammah|Jonadab|Absalom|Amnon|Solomon|Rehoboam|Jeroboam|Ahab|Jezebel|Elijah|Elisha|Isaiah|Jeremiah|Ezekiel|Daniel|Nehemiah|Ezra|Esther|Mordecai|Haman|Cyrus|Darius|Artaxerxes|Xerxes|Vashti|Job|Eliphaz|Bildad|Zophar|Elihu|Jonah|Nineveh|Balak|Og|Sihon|Korah|Dathan|Abiram|Nadab|Abihu|Eleazar|Ithamar|Phinehas|Boaz|Ruth|Naomi|Orpah|Obed|Woman|women|wife|husband|brother|sister|son|daughter|child|children|boy|girl|king(?!dom)|queen|prince|princess|priest(?!hood)|prophet(?!s)|elder|elders|Israel|Israelite|Levite|Levites|wicked|fool|sinner|sluggard|young man|old man|foreigner|stranger|neighbor|shepherd|farmer|soldier|servant|slave|master(?!piece)|owner|herdsman|flock|beast|animal|cattle|donkey|camel|horse|ox|lamb|bird|fish|dragon|demon|devil|Satan|Lucifer)\b/i;
+  /\b(Abram|Abraham|Noah|Moses|Aaron|Adam|Eve|the man|the woman|serpent|Pharaoh|Sarah|Isaac|Jacob|Esau|Lot|Cain|Abel|Seth|Enoch|Methuselah|Lamech|Ham|Shem|Japheth|Hagar|Ishmael|Rebekah|Laban|Joseph|Judah|Benjamin|Leah|Rachel|Dinah|Tamar|Potiphar|Pharaoh's|Midwife|servant girls|angel of Yahweh|Malak|Balaam|Joshua|Caleb|Miriam|Jethro|Zipporah|Gershom|Eliezer|Amalekite|Edomite|Canaanite|Hittite|Hivite|Perizzite|Girgashite|Amorite|Jebusite|Nimrod|Terah|Nahor|Haran|Lot's|Moab|Ben-Ammi|Esau's|Reuben|Simeon|Levi|Dan|Naphtali|Gad|Asher|Issachar|Zebulun|Manasseh|Ephraim| Saul|David|Jonathan|Saul's|Goliath|Samuel|Eli|Hannah|Peninnah|Delilah|Samson|Gideon|Deborah|Barak|Jephthah|Othniel|Ehud|Shamgar|Abimelech|Tola|Jair|Ibzan|Elon|Abdon|Jesse|Eliab|Abinadab|Shammah|Jonadab|Absalom|Amnon|Solomon|Rehoboam|Jeroboam|Ahab|Jezebel|Elijah|Elisha|Isaiah|Jeremiah|Ezekiel|Daniel|Nehemiah|Ezra|Esther|Mordecai|Haman|Cyrus|Darius|Artaxerxes|Xerxes|Vashti|Job|Eliphaz|Bildad|Zophar|Elihu|Jonah|Nineveh|Balak|Og|Sihon|Korah|Dathan|Abiram|Nadab|Abihu|Eleazar|Ithamar|Phinehas|Boaz|Ruth|Naomi|Orpah|Obed|Hezekiah|Nebuchadnezzar|Sennacherib|Tirhakah|Rabshakeh|Gedaliah|Woman|women|wife|husband|brother|sister|son|daughter|child|children|boy|girl|king(?!dom)|queen|prince|princess|priest(?!hood)|prophet(?!s)|elder|elders|Israel|Israelite|Levite|Levites|wicked|fool|sinner|sluggard|young man|old man|foreigner|stranger|neighbor|shepherd|farmer|soldier|servant|slave|master(?!piece)|owner|herdsman|flock|beast|animal|cattle|donkey|camel|horse|ox|lamb|bird|fish|dragon|demon|devil|Satan|Lucifer)\b/i;
 
 
 const PRONOUN_SUBJECT = /\bhe\b|\bhis\b|\bhimself\b/gi;
@@ -99,7 +99,11 @@ const POETRY_DIVINE =
   /\b(Yahweh|God|the Lord|Lord)\s+(is|was|will|my|has|had|administers|knows|lives|reigns|restored|gave)\b|\bhe who sits in the heavens\b|\bThe Lord will\b|\bI love you, Yahweh\b|\bYahweh restored\b/i;
 const POETRY_HUMAN_BLOCK = /\b(Job|David|Solomon|wise man|wicked|fool|sinner)\b/i;
 
-function applyOtPoetryRules(content) {
+function applyOtPoetryRules(content, patterns = {}) {
+  const poetryHuman = patterns.poetryHuman || POETRY_HUMAN;
+  const poetryDivine = patterns.poetryDivine || POETRY_DIVINE;
+  const poetryHumanBlock = patterns.poetryHumanBlock || POETRY_HUMAN_BLOCK;
+
   const tagRegex = /(\[\d+\])/g;
   const parts = content.split(tagRegex);
   let referent = null;
@@ -113,11 +117,11 @@ function applyOtPoetryRules(content) {
 
     let chunk = applyOtProgrammaticRules(part);
 
-    if (POETRY_DIVINE.test(part)) referent = 'divine';
-    else if (POETRY_HUMAN.test(part) || POETRY_HUMAN_BLOCK.test(part)) referent = 'human';
+    if (poetryDivine.test(part)) referent = 'divine';
+    else if (poetryHuman.test(part) || poetryHumanBlock.test(part)) referent = 'human';
 
     const humanCtx =
-      POETRY_HUMAN.test(part) || POETRY_HUMAN_BLOCK.test(part) || referent === 'human';
+      poetryHuman.test(part) || poetryHumanBlock.test(part) || referent === 'human';
 
     if (humanCtx) {
       chunk = decapitalizePronouns(chunk);
@@ -131,11 +135,36 @@ function applyOtPoetryRules(content) {
   return out;
 }
 
+/** Prophets: oracle books use poetry carry-forward; Daniel and Jonah use conservative rules. */
+const PROPHET_POETRY_HUMAN =
+  /\b(Blessed is the man|when he (fled|sang|went|prayed|had been sick)|which he sang|If a man|the wicked|the fool|the sluggard|the sinner|with the wicked|\bman who\b|\bman's wisdom\b|\bA man to whom\b|wise man thinks|a man labors|concerning the king of Assyria|writing of Hezekiah)\b/i;
+const PROPHET_POETRY_DIVINE =
+  /\b(Yahweh|God|the Lord|Lord)\s+(is|was|will|my|has|had|administers|knows|lives|reigns|restored|gave|says|said|stretched)\b|\bhe who sits in the heavens\b|\bThe Lord will\b|\bI love you, Yahweh\b|\bYahweh restored\b|\bThen He said\b/i;
+const PROPHET_POETRY_HUMAN_BLOCK =
+  /\b(Job|David|Solomon|Jonah|Daniel|Jeremiah|Ezekiel|Hezekiah|Nebuchadnezzar|Sennacherib|Tirhakah|Rabshakeh|wise man|wicked|fool|sinner|king of Assyria|king of Judah|king of Babylon)\b/i;
+
+function applyOtProphetPoetryRules(content) {
+  return applyOtPoetryRules(content, {
+    poetryHuman: PROPHET_POETRY_HUMAN,
+    poetryDivine: PROPHET_POETRY_DIVINE,
+    poetryHumanBlock: PROPHET_POETRY_HUMAN_BLOCK,
+  });
+}
+
+function applyOtProphetRules(content, options = {}) {
+  if (options.conservative) {
+    return applyOtProgrammaticRules(content, { conservative: true });
+  }
+  return applyOtProphetPoetryRules(content);
+}
+
 module.exports = {
   DIVINE_NAME,
   HUMAN_OR_CREATURE,
   applyOtProgrammaticRules,
   applyOtPoetryRules,
+  applyOtProphetPoetryRules,
+  applyOtProphetRules,
   capitalizePronouns,
   processVerse,
 };

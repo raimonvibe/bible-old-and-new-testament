@@ -1,0 +1,12 @@
+{
+  "reference": "Ezekiel 8",
+  "description": "Pilot — vision narrative; Yahweh speaks to Ezekiel",
+  "mustContain": [
+    "He stretched out the form of a hand",
+    "Then He said to me, “Son of man, have you seen"
+  ],
+  "mustNotContain": [
+    "he stretched out the form of a hand",
+    "Then he said to me, “Son of man"
+  ]
+}

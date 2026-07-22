@@ -1,0 +1,11 @@
+{
+  "reference": "Jeremiah 1",
+  "description": "Pilot — Yahweh calls Jeremiah; divine His hand",
+  "mustContain": [
+    "Then Yahweh stretched out His hand and touched my mouth."
+  ],
+  "mustNotContain": [
+    "stretched out his hand and touched my mouth",
+    "Jeremiah He answered"
+  ]
+}

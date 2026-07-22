@@ -1,0 +1,12 @@
+{
+  "reference": "Isaiah 37",
+  "description": "Pilot — Assyrian king and Hezekiah remain human he/his",
+  "mustContain": [
+    "for he heard that he had departed from Lachish.",
+    "‘he will not come to this city, nor shoot an arrow there"
+  ],
+  "mustNotContain": [
+    "for He heard that He had departed",
+    "‘He will not come to this city"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "reference": "Isaiah 40",
+  "description": "Pilot — comfort oracle; God as shepherd across poetic lines",
+  "mustContain": [
+    "He will feed His flock like a shepherd.",
+    "He will gather the lambs in His arm,"
+  ],
+  "mustNotContain": [
+    "He will feed his flock",
+    "he will gather the lambs"
+  ]
+}
