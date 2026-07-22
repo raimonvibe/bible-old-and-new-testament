@@ -31,7 +31,7 @@ Do **not** change WEB wording — capitalization only.
 
 ## Sentence-initial pronouns (English grammar)
 
-Capitalize the first word of a sentence normally — including pronouns — even when the referent is human:
+Capitalize the first word of a sentence normally — including pronouns and words like *And*, *For*, *But* — even when the referent is human:
 
 - Acts 19:3 — **He** said, “Into what then were you baptized?” (Paul; sentence start)
 - Mid-sentence, same human — lowercase: “…the multitude, **he** departed from them” (Acts 19:9)

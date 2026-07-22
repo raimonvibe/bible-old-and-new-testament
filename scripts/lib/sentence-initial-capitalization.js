@@ -1,9 +1,10 @@
 /**
  * Sentence-initial capitalization (grammar layer).
- * Capitalize pronouns at sentence starts without changing mid-sentence reverential rules.
+ * Safely capitalizes the first word after strong sentence boundaries.
+ * Does not change mid-sentence reverential pronoun rules.
  */
 
-/** Books where newline-indented lines are poetry, not sentence breaks. */
+/** Books with line-break layout; verse-only boundaries still apply. */
 const POETRY_LAYOUT_BOOKS = new Set([
   'Psalms',
   'Proverbs',
@@ -12,11 +13,14 @@ const POETRY_LAYOUT_BOOKS = new Set([
   'Job',
 ]);
 
-/** Lowercase at sentence start per style guide (divine speech). */
+/** Always lowercase at sentence start (style guide — divine speech). */
 const NEVER_CAPITALIZE = new Set(['us', 'our']);
 
-/** Pronouns to capitalize when they begin a sentence. */
-const SENTENCE_PRONOUN = /^(he|she|they|it|we|him|his|her|them)\b/i;
+/** Skip punctuation/quotes before the first word at a sentence start. */
+const LEADING_JUNK = /^[\s"'‘’“”]+/;
+
+/** First word at a sentence start (must begin with lowercase letter). */
+const SENTENCE_START_WORD = /^([a-z][a-z']*)/;
 
 const ABBREVIATIONS = new Set([
   'mr',
@@ -47,20 +51,29 @@ function isSentenceEndingPunctuation(text, index) {
   const ch = text[index];
   if (ch !== '.' && ch !== '!' && ch !== '?') return false;
   if (ch === '.' && isAbbreviationPeriod(text, index)) return false;
-  if (ch === '.' && index > 0 && index < text.length - 1 && /\d/.test(text[index - 1]) && /\d/.test(text[index + 1])) {
+  if (
+    ch === '.' &&
+    index > 0 &&
+    index < text.length - 1 &&
+    /\d/.test(text[index - 1]) &&
+    /\d/.test(text[index + 1])
+  ) {
     return false;
   }
   return true;
 }
 
 /**
- * Returns indices in `text` where a sentence begins.
+ * Strong sentence boundaries only (safe for poetry/prophets):
+ * - start of text
+ * - after . ! ? (skipping trailing quotes/whitespace)
+ * - after [n] verse markers
+ *
+ * Does NOT treat bare newlines or semicolons as boundaries.
  * @param {string} text
- * @param {{ poetryLayout?: boolean }} options
  * @returns {number[]}
  */
-function findSentenceStarts(text, options = {}) {
-  const poetryLayout = options.poetryLayout === true;
+function findSentenceStarts(text) {
   const starts = new Set();
 
   if (text.length > 0) {
@@ -70,20 +83,13 @@ function findSentenceStarts(text, options = {}) {
   for (let i = 0; i < text.length; i++) {
     if (isSentenceEndingPunctuation(text, i)) {
       let j = i + 1;
-      while (j < text.length && /[\s\n]/.test(text[j])) j++;
+      while (j < text.length && /[\s\n"'‘’“”]/.test(text[j])) j++;
       if (j < text.length) starts.add(j);
-    }
-
-    if (text[i] === '\n' && !poetryLayout) {
-      let j = i + 1;
-      while (j < text.length && /[ \t]/.test(text[j])) j++;
-      if (j < text.length && /[a-zA-Z\[“"']/.test(text[j])) starts.add(j);
     }
 
     const verseMatch = text.slice(i).match(/^\[\d+\]\s+/);
     if (verseMatch) {
-      const j = i + verseMatch[0].length;
-      starts.add(j);
+      starts.add(i + verseMatch[0].length);
     }
   }
 
@@ -91,65 +97,77 @@ function findSentenceStarts(text, options = {}) {
 }
 
 /**
- * Capitalize sentence-initial pronouns in chapter content.
+ * Locate the first word at a sentence-start index.
+ * @returns {{ word: string, offset: number } | null}
+ */
+function wordAtSentenceStart(content, start) {
+  let pos = start;
+  const tail = content.slice(pos);
+  const lead = tail.match(LEADING_JUNK);
+  if (lead) pos += lead[0].length;
+
+  const slice = content.slice(pos);
+  const match = slice.match(SENTENCE_START_WORD);
+  if (!match) return null;
+
+  const word = match[1];
+  if (NEVER_CAPITALIZE.has(word.toLowerCase())) return null;
+  if (word[0] === word[0].toUpperCase()) return null;
+
+  return { word, offset: pos + match.index };
+}
+
+/**
+ * Capitalize the first word at each safe sentence start.
  * @param {string} content
- * @param {{ poetryLayout?: boolean }} options
  * @returns {{ content: string, changes: number }}
  */
-function applySentenceInitialCaps(content, options = {}) {
-  const starts = findSentenceStarts(content, options);
+function applyFullSentenceInitialCaps(content) {
+  const starts = findSentenceStarts(content);
   let changes = 0;
   const chars = [...content];
 
   for (const start of starts) {
-    const slice = content.slice(start);
-    const match = slice.match(SENTENCE_PRONOUN);
-    if (!match) continue;
+    const hit = wordAtSentenceStart(content, start);
+    if (!hit) continue;
 
-    const word = match[1];
-    const lower = word.toLowerCase();
-    if (NEVER_CAPITALIZE.has(lower)) continue;
-    if (word === word.toUpperCase()) continue;
-    if (word[0] === word[0].toUpperCase()) continue;
-
-    const offset = start + match.index;
-    chars[offset] = chars[offset].toUpperCase();
+    chars[hit.offset] = chars[hit.offset].toUpperCase();
     changes++;
   }
 
   return { content: chars.join(''), changes };
 }
 
+/** @deprecated alias — applies full safe sentence-initial pass (includes pronouns). */
+function applySentenceInitialCaps(content, _options = {}) {
+  return applyFullSentenceInitialCaps(content);
+}
+
 /**
- * Audit sentence-initial lowercase pronouns.
- * @param {string} content
- * @param {{ poetryLayout?: boolean, reference?: string }} meta
- * @returns {Array<{ reference?: string, index: number, word: string, snippet: string }>}
+ * Audit lowercase words at safe sentence starts.
  */
-function auditSentenceInitialCaps(content, meta = {}) {
-  const starts = findSentenceStarts(content, meta);
+function auditFullSentenceInitialCaps(content, meta = {}) {
+  const starts = findSentenceStarts(content);
   const findings = [];
 
   for (const start of starts) {
-    const slice = content.slice(start);
-    const match = slice.match(SENTENCE_PRONOUN);
-    if (!match) continue;
+    const hit = wordAtSentenceStart(content, start);
+    if (!hit) continue;
 
-    const word = match[1];
-    const lower = word.toLowerCase();
-    if (NEVER_CAPITALIZE.has(lower)) continue;
-    if (word[0] === word[0].toUpperCase()) continue;
-
-    const index = start + match.index;
     findings.push({
       reference: meta.reference,
-      index,
-      word: lower,
-      snippet: content.slice(Math.max(0, index - 25), index + 55).replace(/\s+/g, ' '),
+      index: hit.offset,
+      word: hit.word.toLowerCase(),
+      snippet: content.slice(Math.max(0, hit.offset - 25), hit.offset + 55).replace(/\s+/g, ' '),
     });
   }
 
   return findings;
+}
+
+/** @deprecated alias */
+function auditSentenceInitialCaps(content, meta = {}) {
+  return auditFullSentenceInitialCaps(content, meta);
 }
 
 function isPoetryLayoutBook(bookName) {
@@ -160,7 +178,10 @@ module.exports = {
   POETRY_LAYOUT_BOOKS,
   NEVER_CAPITALIZE,
   findSentenceStarts,
+  wordAtSentenceStart,
+  applyFullSentenceInitialCaps,
   applySentenceInitialCaps,
+  auditFullSentenceInitialCaps,
   auditSentenceInitialCaps,
   isPoetryLayoutBook,
 };

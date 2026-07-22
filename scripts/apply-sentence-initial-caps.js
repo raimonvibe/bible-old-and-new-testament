@@ -1,17 +1,15 @@
 /**
- * Apply sentence-initial pronoun capitalization across the entire Bible.
+ * Apply safe sentence-initial capitalization across the entire Bible.
+ * Capitalizes the first word after . ! ? and [n] verse markers only.
  *
  * Usage:
  *   node scripts/apply-sentence-initial-caps.js           # dry-run (default)
- *   node scripts/apply-sentence-initial-caps.js --apply     # write files
+ *   node scripts/apply-sentence-initial-caps.js --apply   # write files
  */
 
 const fs = require('fs');
 const path = require('path');
-const {
-  applySentenceInitialCaps,
-  isPoetryLayoutBook,
-} = require('./lib/sentence-initial-capitalization');
+const { applyFullSentenceInitialCaps } = require('./lib/sentence-initial-capitalization');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const NT_FILE = path.join(DATA_DIR, 'new-testament-data.json');
@@ -33,9 +31,7 @@ function processDataset(data, excluded) {
     for (const chapter of book.chapters || []) {
       if (excluded.has(chapter.reference)) continue;
 
-      const { content, changes: n } = applySentenceInitialCaps(chapter.content, {
-        poetryLayout: isPoetryLayoutBook(book.name),
-      });
+      const { content, changes: n } = applyFullSentenceInitialCaps(chapter.content);
 
       if (n > 0) {
         chapters++;

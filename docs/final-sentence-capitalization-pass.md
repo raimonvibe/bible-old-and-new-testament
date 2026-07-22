@@ -17,15 +17,14 @@ These are **two separate layers:**
 
 ### Capitalize at sentence start
 
-- Any word that begins a sentence, including pronouns: **He**, **She**, **They**, **It**, **We** (when it is normal grammar — see exclusions)
-- After `.` `!` `?` closing a sentence
-- After verse marker `[n]` when the following text starts a new sentence (not a continuation)
-- After `\n` line break when the new line starts a sentence (poetry / quoted blocks — review)
+- The **first word** after a strong sentence boundary: **And**, **For**, **But**, **The**, **He**, etc.
+- Boundaries used (safe): `.` `!` `?` then whitespace/quotes, and `[n]` verse markers
+- **Not** bare newlines or semicolons (avoids breaking poetry/prophets line layout)
 
 ### Do NOT capitalize (keep as-is)
 
-- **Mid-sentence** human pronouns (reverential lowercase): “…the multitude, **he** departed”
-- **Divine speech exclusions** (style guide): Gen 1:26 “Let **us**… **our** image”
+- **Mid-sentence** words (reverential and grammar): “…the multitude, **he** departed”
+- **Divine speech exclusions:** Gen 1:26 “Let **us**… **our** image” (`us`/`our` never capitalized at sentence start)
 - Words **inside nested quotes** that are mid-sentence in the quoted speech (context review)
 - Proper nouns already capitalized
 - Acrostic / poetry layout where WEB intentionally uses lowercase for literary form (Psalms, Song of Solomon — flag for manual review)
@@ -132,19 +131,19 @@ Extend `scripts/validate-capitalization.js` to load gold from both `gold/` and `
 
 ## Applied (2026-07-22)
 
+**Pass 1 — pronouns:** 2,719 pronouns at sentence/verse starts.
+
+**Pass 2 — all words (safe):** 3,388 additional words (`And`, `For`, `But`, `The`, …) using strong boundaries only.
+
 ```bash
-node scripts/audit-sentence-initial-caps.js      # 2719 candidates
+node scripts/audit-sentence-initial-caps.js      # 0 remaining at safe boundaries
 node scripts/apply-sentence-initial-caps.js --apply
-node scripts/validate-capitalization.js        # 39 gold files
+node scripts/validate-capitalization.js            # 39 gold files
 ```
 
-**Results:** 2719 pronouns capitalized in 682 chapters (260 NT, 2459 OT).
+**Results:** 6,107 total sentence-start fixes; **0** lowercase words remain at safe boundaries.
 
-**Scripts:** `scripts/lib/sentence-initial-capitalization.js`, `scripts/audit-sentence-initial-caps.js`, `scripts/apply-sentence-initial-caps.js`
-
-**Poetry layout books** (no newline sentence breaks): Psalms, Proverbs, Song of Solomon, Lamentations, Job.
-
-**Never capitalize at sentence start:** `us`, `our` (style guide).
+**Safe rules:** only after `. ! ?` (skipping abbreviations) and `[n]` verse markers; **no** bare newline breaks (protects Psalms, Isaiah, etc.). Never capitalizes `us`/`our`.
 
 ---
 
