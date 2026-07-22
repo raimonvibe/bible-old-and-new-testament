@@ -3,9 +3,11 @@
   "description": "Generations of Adam — God as subject in creation summary (v1–2)",
   "mustContain": [
     "In the day that God created man, He made him in God’s likeness.",
-    "He created them male and female, and blessed them. On the day they were created, He named them Adam."
+    "He created them male and female, and blessed them. On the day they were created, He named them Adam.",
+    "Enoch walked with God, and he was not found, for God took him."
   ],
   "mustNotContain": [
-    "On the day they were created, he named them Adam."
+    "On the day they were created, he named them Adam.",
+    "Enoch walked with God, and He was not found, for God took him."
   ]
 }
