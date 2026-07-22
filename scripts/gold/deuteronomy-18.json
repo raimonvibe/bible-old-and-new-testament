@@ -1,0 +1,12 @@
+{
+  "reference": "Deuteronomy 18",
+  "description": "Levite — he lives, his soul, he shall minister; Yahweh his God",
+  "mustContain": [
+    "where he lives, and comes with all the desire of his soul",
+    "Then he shall minister in the name of Yahweh his God, as all his brothers the Levites do"
+  ],
+  "mustNotContain": [
+    "where He lives, and comes with all the desire of His soul",
+    "Then He shall minister in the name of Yahweh His God, as all His brothers"
+  ]
+}

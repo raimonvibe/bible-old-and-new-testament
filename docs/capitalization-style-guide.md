@@ -38,6 +38,18 @@ Capitalize the first word of a sentence normally — including pronouns and word
 
 This is **grammar**, not reverential capitalization. Do not lowercase sentence-initial pronouns to match WEB’s all-lowercase habit.
 
+## Mid-verse pronouns (mandatory check)
+
+After a **comma** or **semicolon** within a verse, every **He / Him / His** must get an explicit referent decision — **even when God, Yahweh, or Jesus appears elsewhere in the same verse**.
+
+| Example | Referent | Correct |
+|---------|----------|---------|
+| Gen 5:24 — walked with God, and ___ was not found | Enoch | **he** |
+| Lev 7:14 — Of it ___ shall offer | human offerer | **he** |
+| Ex 3:6 — holy ground.” ___ said, “I am the God… | Yahweh continues | **He** |
+
+Do **not** skip this pass because the chapter is genealogical or legal. Run `node scripts/review/scan-midverse-pronouns.js <Book>` and resolve each hit before marking the book reviewed.
+
 ## First person plural — do NOT capitalize
 
 Keep `We`, `Us`, `Our` lowercase even in divine speech:

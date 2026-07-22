@@ -36,6 +36,7 @@ Full-Bible capitalization review: read every chapter in context, decide referent
 | **Lord** | Divine title (God, Jesus, “the Lord”) |
 | **lord** | Human master, noble, formal address (e.g. Festus → Caesar: “my lord”) |
 | Sentence start after `. ! ?` or `[n]` | Capitalize first word (grammar — even for human subjects) |
+| **Mid-verse after `,` or `;`** | **Always check referent** — do not assume divine because God appears elsewhere in the verse (Gen 5:24; Lev 7:14) |
 | **us / our** in divine speech | Stay lowercase (Gen 1:26) |
 
 When uncertain, prefer lowercase for pronouns and add a gold `mustContain` / `mustNotContain` pair after deciding.
@@ -48,11 +49,14 @@ When uncertain, prefer lowercase for pronouns and add a gold `mustContain` / `mu
 1. Load chapter (readable text, verse numbers visible)
 2. Read full chapter in order
 3. Flag every He/he, Him/him, His/his, Lord/lord — note referent
-4. Apply edits to data/old-testament-data.json or data/new-testament-data.json
-5. Add scripts/gold/<book>-<chapter>.json if tricky
-6. Mark chapter reviewed in scripts/review/progress.json (when tracker exists)
-7. After book complete: node scripts/validate-capitalization.js → commit → push
+4. **Mid-verse pass (mandatory):** every `, He/Him/His` or `; He/Him/His` in the chapter — decide referent even when God/Yahweh is in the same verse
+5. Apply edits to data/old-testament-data.json or data/new-testament-data.json
+6. Add scripts/gold/<book>-<chapter>.json if tricky
+7. Mark chapter reviewed in scripts/review/progress.json (when tracker exists)
+8. After book complete: node scripts/validate-capitalization.js → commit → push
 ```
+
+Run `node scripts/review/scan-midverse-pronouns.js <Book>` before marking a book done; resolve or document every hit.
 
 ### What to watch for
 
@@ -67,6 +71,12 @@ When uncertain, prefer lowercase for pronouns and add a gold `mustContain` / `mu
 - Human object in legal/narrative speech (“against **him**” = Paul, not Jesus — Acts 25:19).
 - Quoted speech about a historical human (e.g. David in Jesus’ quote — Luke 6:3).
 - Parable characters (landowner, king, steward) — usually lowercase.
+- **Mid-verse after comma/semicolon** when subject is human despite God in same verse: Enoch “walked with God, and **he** was not found” (Gen 5:24); offerer “Of it **he** shall offer” (Lev 7:14).
+
+**Hard zones — slow pass (not lighter)**
+
+- Genealogies (Gen 5, 1 Chr 1–9): unusual verbs (“was not found”) break the “he lived / he died” rhythm.
+- Ritual law (Lev 1–7, Num 5–6): many sentence-initial **He shall** (human priest — grammar OK); mid-clause **His offering** / **he shall offer** often wrong.
 
 **Often correct — do not “fix” blindly**
 
@@ -88,7 +98,7 @@ Review in this exact sequence. Check off each book when all chapters are reviewe
 | 2 | Exodus | 40 | ✓ reviewed |
 | 3 | Leviticus | 27 | ✓ reviewed |
 | 4 | Numbers | 36 | ✓ reviewed |
-| 5 | Deuteronomy | 34 | |
+| 5 | Deuteronomy | 34 | ✓ reviewed |
 | 6 | Joshua | 24 | |
 | 7 | Judges | 21 | |
 | 8 | Ruth | 4 | |

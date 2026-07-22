@@ -1,0 +1,10 @@
+{
+  "reference": "Deuteronomy 2",
+  "description": "Sihon king — his sons/people, not divine His",
+  "mustContain": [
+    "we struck him, his sons, and all his people."
+  ],
+  "mustNotContain": [
+    "we struck him, His sons, and all His people."
+  ]
+}
