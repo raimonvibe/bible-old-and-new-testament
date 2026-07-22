@@ -1,0 +1,16 @@
+{
+  "reference": "Ephesians 1",
+  "description": "Blessing passage — Father/Son divine pronouns",
+  "mustContain": [
+    "even as He chose us in Him",
+    "In Him we have our redemption through His blood",
+    "He put all things in subjection under His feet",
+    "gave Him to be head over all things"
+  ],
+  "mustNotContain": [
+    "even as he chose us in him",
+    "In him we have our redemption through his blood",
+    "he put all things in subjection under his feet",
+    "gave him to be head over all things"
+  ]
+}

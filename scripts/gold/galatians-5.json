@@ -1,0 +1,12 @@
+{
+  "reference": "Galatians 5",
+  "description": "God vs human pronouns in calling and false teachers",
+  "mustContain": [
+    "not from Him who calls you",
+    "But he who troubles you will bear his judgment"
+  ],
+  "mustNotContain": [
+    "not from him who calls you",
+    "But He who troubles you will bear His judgment"
+  ]
+}

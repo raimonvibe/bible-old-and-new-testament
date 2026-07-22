@@ -1,0 +1,16 @@
+{
+  "reference": "Colossians 1",
+  "description": "Christ hymn — preeminence and reconciliation",
+  "mustContain": [
+    "For by Him all things were created",
+    "All things have been created through Him and for Him",
+    "He is before all things, and in Him all things are held together",
+    "through Him to reconcile all things to Himself"
+  ],
+  "mustNotContain": [
+    "For by him all things were created",
+    "All things have been created through him and for him",
+    "he is before all things, and in him all things are held together",
+    "through him to reconcile all things to himself"
+  ]
+}

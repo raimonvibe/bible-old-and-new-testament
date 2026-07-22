@@ -24,4 +24,4 @@ node scripts/validate-capitalization.js
 
 ## Next
 
-2 Corinthians, then remaining Pauline epistles.
+Hebrews, James, General epistles, then Gospels.
