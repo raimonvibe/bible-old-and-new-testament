@@ -1,0 +1,23 @@
+{
+  "reference": "Romans 8",
+  "description": "Gold-standard expectations — Spirit/flesh chapter with divine golden chain",
+  "mustContain": [
+    "he is not His",
+    "because of Him who subjected it",
+    "The Spirit Himself testifies",
+    "For whom He foreknew, He also predestined",
+    "Whom He predestined, those He also called",
+    "He who didn\u2019t spare His own Son",
+    "delivered Him up for us all",
+    "through Him who loved us",
+    "called according to His purpose"
+  ],
+  "mustNotContain": [
+    "But if any man doesn\u2019t have the Spirit of Christ, He is not His",
+    "because of him who subjected it",
+    "The Spirit himself makes intercession",
+    "For whom he foreknew, he also predestined",
+    "he who didn\u2019t spare his own Son",
+    "through him who loved us"
+  ]
+}
