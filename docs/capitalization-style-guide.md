@@ -77,7 +77,7 @@ When uncertain, prefer lowercase and add to the flagged-verses list for manual r
 3. Record changes with verse-level reasons
 4. Run `node scripts/validate-capitalization.js` for gold chapters
 5. Do **not** re-run regex capitalize scripts after AI pass
-6. **After the entire app is done** — run the final sentence-initial pass (see `docs/final-sentence-capitalization-pass.md`)
+6. **Final sentence-initial pass** — complete; see `docs/final-sentence-capitalization-pass.md`
 
 ## Gold-standard pilot chapters
 

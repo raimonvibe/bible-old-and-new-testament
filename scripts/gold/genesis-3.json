@@ -1,12 +1,12 @@
 {
   "reference": "Genesis 3",
-  "description": "Pilot — Fall; serpent and Adam lowercase, Yahweh capitalized",
+  "description": "Pilot — Fall; serpent He at sentence start; Yahweh said to him (Adam object)",
   "mustContain": [
-    "Now the serpent was more subtle than any animal of the field which Yahweh God had made. he said to the woman",
+    "Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to the woman",
     "Yahweh God called to the man, and said to him, “Where are you?”"
   ],
   "mustNotContain": [
-    "serpent was more subtle than any animal of the field which Yahweh God had made. He said to the woman",
-    "Yahweh God called to the man, and said to Him, “Where are you?”"
+    "Yahweh God called to the man, and said to Him, “Where are you?”",
+    "serpent was more subtle than any animal of the field which Yahweh God had made. he said to the woman"
   ]
 }

@@ -1,9 +1,9 @@
 {
   "reference": "2 Timothy 2",
-  "description": "Faithful saying — Christ as referent of He/Him/Himself",
+  "description": "Faithful saying — Christ as referent of He/Him; We at line start in quoted saying",
   "mustContain": [
     "For if we died with Him",
-    "we will also live with Him",
+    "We will also live with Him",
     "If we deny Him",
     "He also will deny us",
     "He remains faithful",
@@ -11,7 +11,6 @@
   ],
   "mustNotContain": [
     "For if we died with him",
-    "we will also live with him",
     "If we deny him",
     "he also will deny us",
     "he remains faithful",

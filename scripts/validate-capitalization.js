@@ -9,6 +9,7 @@ const path = require('path');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const GOLD_DIR = path.join(__dirname, 'gold');
+const SENTENCE_GOLD_DIR = path.join(GOLD_DIR, 'sentence');
 const NT_FILE = path.join(DATA_DIR, 'new-testament-data.json');
 const OT_FILE = path.join(DATA_DIR, 'old-testament-data.json');
 
@@ -40,11 +41,26 @@ function validateGold(goldPath, content) {
   return { reference: gold.reference, errors };
 }
 
+function collectGoldFiles(dir) {
+  if (!fs.existsSync(dir)) return [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...collectGoldFiles(fullPath));
+    } else if (entry.name.endsWith('.json')) {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
 function main() {
   const nt = JSON.parse(fs.readFileSync(NT_FILE, 'utf8'));
   const ot = fs.existsSync(OT_FILE) ? JSON.parse(fs.readFileSync(OT_FILE, 'utf8')) : { books: [] };
   const datasets = [nt, ot];
-  const goldFiles = fs.readdirSync(GOLD_DIR).filter((f) => f.endsWith('.json'));
+  const goldFiles = collectGoldFiles(GOLD_DIR);
 
   if (goldFiles.length === 0) {
     console.log('No gold files found.');
@@ -53,8 +69,7 @@ function main() {
 
   let failed = 0;
 
-  for (const file of goldFiles) {
-    const goldPath = path.join(GOLD_DIR, file);
+  for (const goldPath of goldFiles) {
     const gold = JSON.parse(fs.readFileSync(goldPath, 'utf8'));
     let chapter = null;
     for (const data of datasets) {
@@ -69,10 +84,14 @@ function main() {
     }
 
     const { errors } = validateGold(goldPath, chapter.content);
+    const label =
+      goldPath.startsWith(SENTENCE_GOLD_DIR + path.sep) || goldPath.includes('/sentence/')
+        ? `${gold.reference} (sentence)`
+        : gold.reference;
     if (errors.length === 0) {
-      console.log(`✓ ${gold.reference}`);
+      console.log(`✓ ${label}`);
     } else {
-      console.error(`✗ ${gold.reference}:`);
+      console.error(`✗ ${label}:`);
       for (const err of errors) console.error(`  - ${err}`);
       failed++;
     }

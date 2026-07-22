@@ -1,17 +1,17 @@
 {
   "reference": "John 1",
-  "description": "Pilot — Logos/Word; Him for Christ, he for John the Baptist",
+  "description": "Pilot — Logos/Word; Him for Christ, He at sentence start for John the Baptist",
   "mustContain": [
     "All things were made through Him. Without Him, nothing was made that has been made.",
     "In Him was life, and the life was the light of men.",
     "He was in the world, and the world was made through Him, and the world didn\u2019t recognize Him.",
     "We saw His glory, such glory as of the only born Son of the Father",
-    "he was not the light, but was sent that he might testify about the light."
+    "He was not the light, but was sent that he might testify about the light."
   ],
   "mustNotContain": [
     "All things were made through him. Without him, nothing was made",
     "In him was life",
     "We saw his glory, such glory as of the only born Son",
-    "He was not the light, but was sent that He might testify"
+    "he was not the light, but was sent that He might testify"
   ]
 }

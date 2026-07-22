@@ -1,12 +1,12 @@
 {
   "reference": "Jonah 1",
-  "description": "Pilot — Jonah narrative; conservative rules keep human he",
+  "description": "Pilot — Jonah narrative; He at sentence start (grammar), human he mid-sentence",
   "mustContain": [
-    "he went down to Joppa, and found a ship going to Tarshish",
-    "he said to them, “I am a Hebrew, and I fear Yahweh"
+    "He went down to Joppa, and found a ship going to Tarshish",
+    "He said to them, “I am a Hebrew, and I fear Yahweh"
   ],
   "mustNotContain": [
-    "He went down to Joppa",
-    "He said to them, “I am a Hebrew"
+    "Yahweh He sent",
+    "the ship He paid"
   ]
 }

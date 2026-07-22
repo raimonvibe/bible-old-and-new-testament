@@ -1,9 +1,9 @@
 {
   "reference": "Exodus 3",
-  "description": "Pilot — burning bush; Moses lowercase, Yahweh subject caps",
+  "description": "Pilot — burning bush; Moses he mid-sentence, He at sentence start after period",
   "mustContain": [
     "Now Moses was keeping the flock of Jethro, his father-in-law, the priest of Midian, and he led the flock",
-    "Yahweh’s angel appeared to him in a flame of fire out of the middle of a bush. he looked, and behold, the bush burned with fire"
+    "Yahweh’s angel appeared to him in a flame of fire out of the middle of a bush. He looked, and behold, the bush burned with fire"
   ],
   "mustNotContain": [
     "and He led the flock to the back of the wilderness",

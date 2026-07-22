@@ -1,0 +1,12 @@
+{
+  "reference": "Genesis 1",
+  "description": "Sentence-initial divine grammar; us/our in divine speech unchanged",
+  "mustContain": [
+    "He also made the stars.",
+    "Let\u2019s make man in our image"
+  ],
+  "mustNotContain": [
+    "he also made the stars.",
+    "Let Us make man in Our image"
+  ]
+}

@@ -1,12 +1,13 @@
 {
   "reference": "Psalms 1",
-  "description": "Pilot — blessed man remains lowercase; no divine He",
+  "description": "Pilot — blessed man; He at verse start (grammar), mid-line he unchanged in poetry layout",
   "mustContain": [
-    "he will be like a tree planted by the streams of water,",
-    "Whatever he does shall prosper."
+    "He will be like a tree planted by the streams of water,",
+    "Whatever he does shall prosper.",
+    "On his law he meditates day and night."
   ],
   "mustNotContain": [
-    "He will be like a tree",
+    "He meditates day and night",
     "Whatever He does shall prosper"
   ]
 }

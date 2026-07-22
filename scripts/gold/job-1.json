@@ -1,12 +1,12 @@
 {
   "reference": "Job 1",
-  "description": "Pilot — Job narrative; human he/his lowercase",
+  "description": "Pilot — Job narrative; His at verse start, him/his mid-sentence",
   "mustContain": [
     "There were born to him seven sons and three daughters.",
-    "his possessions also were seven thousand sheep"
+    "His possessions also were seven thousand sheep"
   ],
   "mustNotContain": [
     "born to Him seven sons",
-    "His possessions also"
+    "Yahweh gave Him twice"
   ]
 }

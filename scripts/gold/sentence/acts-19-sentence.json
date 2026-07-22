@@ -1,0 +1,13 @@
+{
+  "reference": "Acts 19",
+  "description": "Sentence-initial grammar vs mid-sentence reverential lowercase",
+  "mustContain": [
+    "He said, “Into what then were you baptized?”",
+    "They said to him, “No, we haven’t even heard",
+    "speaking evil of the Way before the multitude, he departed from them"
+  ],
+  "mustNotContain": [
+    "[3] he said, “Into what",
+    "the multitude, He departed from them"
+  ]
+}

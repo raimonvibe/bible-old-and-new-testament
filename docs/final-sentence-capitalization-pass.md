@@ -121,12 +121,30 @@ Extend `scripts/validate-capitalization.js` to load gold from both `gold/` and `
 
 ## Success criteria
 
-- [ ] No sentence begins with lowercase `he`, `she`, `they`, `it` (except documented exclusions)
-- [ ] Mid-sentence human pronouns still lowercase (Rom 9:16, Acts 19:9)
-- [ ] Divine speech **us/our** still lowercase (Gen 1:26)
-- [ ] All existing reverential gold files still pass
-- [ ] New sentence gold files pass
+- [x] No sentence begins with lowercase `he`, `she`, `they`, `it` (except documented exclusions)
+- [x] Mid-sentence human pronouns still lowercase (Rom 9:16, Acts 19:9)
+- [x] Divine speech **us/our** still lowercase (Gen 1:26)
+- [x] All existing reverential gold files still pass
+- [x] New sentence gold files pass
 - [ ] App read-aloud / display unchanged except corrected sentence starts
+
+---
+
+## Applied (2026-07-22)
+
+```bash
+node scripts/audit-sentence-initial-caps.js      # 2719 candidates
+node scripts/apply-sentence-initial-caps.js --apply
+node scripts/validate-capitalization.js        # 39 gold files
+```
+
+**Results:** 2719 pronouns capitalized in 682 chapters (260 NT, 2459 OT).
+
+**Scripts:** `scripts/lib/sentence-initial-capitalization.js`, `scripts/audit-sentence-initial-caps.js`, `scripts/apply-sentence-initial-caps.js`
+
+**Poetry layout books** (no newline sentence breaks): Psalms, Proverbs, Song of Solomon, Lamentations, Job.
+
+**Never capitalize at sentence start:** `us`, `our` (style guide).
 
 ---
 
