@@ -1,0 +1,12 @@
+{
+  "reference": "Psalms 145",
+  "description": "Psalm 145:20 — love Him / He will destroy (Yahweh as divine object and subject)",
+  "mustContain": [
+    "Yahweh preserves all those who love Him",
+    "but He will destroy all the wicked"
+  ],
+  "mustNotContain": [
+    "preserves all those who love him",
+    "but he will destroy all the wicked"
+  ]
+}

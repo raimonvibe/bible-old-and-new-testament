@@ -1,0 +1,10 @@
+{
+  "reference": "Judges 5",
+  "description": "Deborah's song — those who love Him (Yahweh) as divine object",
+  "mustContain": [
+    "but let those who love Him be as the sun when it rises in its strength"
+  ],
+  "mustNotContain": [
+    "let those who love him be as the sun"
+  ]
+}

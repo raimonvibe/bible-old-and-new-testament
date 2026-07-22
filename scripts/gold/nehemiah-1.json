@@ -1,0 +1,10 @@
+{
+  "reference": "Nehemiah 1",
+  "description": "Nehemiah's prayer — covenant formula love Him / His commandments",
+  "mustContain": [
+    "who keeps covenant and loving kindness with those who love Him and keep His commandments"
+  ],
+  "mustNotContain": [
+    "those who love him and keep His commandments"
+  ]
+}

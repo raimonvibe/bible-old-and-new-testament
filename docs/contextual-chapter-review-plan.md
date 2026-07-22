@@ -10,6 +10,27 @@ Full-Bible capitalization review: read every chapter in context, decide referent
 
 **Scope:** 66 books · **1,190 chapters** (OT 930 + NT 260)
 
+---
+
+## Continue here (next session)
+
+**Date paused:** 22 July 2026  
+**Resume with:** **Joshua** (book 6 · 24 chapters) — first chapter **Joshua 1**
+
+**Completed so far:** Genesis · Exodus · Leviticus · Numbers · Deuteronomy (Torah done · 187 / 1,190 chapters)
+
+**Before starting Joshua:**
+
+1. Run `node scripts/review/scan-midverse-pronouns.js Joshua` — resolve every hit.
+2. Follow workflow below (full chapter read + mid-verse pass).
+3. Watch for: human kings/leaders vs Yahweh in conquest narrative; **lord** in speech to Joshua or kings; implied divine subject in Moses’ final speeches (already done in Deut).
+
+**After Joshua:** Judges (21 chapters) → Ruth (4) → 1 Samuel (31) …
+
+Progress detail: `scripts/review/progress.json`
+
+---
+
 **Style rules:** [capitalization-style-guide.md](./capitalization-style-guide.md)
 
 **Why this plan:** Bulk scripts (`apply-*-capitalization.js`) cannot reliably judge referent across verse boundaries, implied divine subjects, legal speech, or parables. Genesis 5:2 (`he named` → `He named`) and Acts 25:19 (`against Him` → `against him`) are examples of errors only context catches.
@@ -267,4 +288,4 @@ Regex flag lists are **hints only** — always confirm by reading the chapter.
 
 ---
 
-*Last updated: July 2026 · Review order: Genesis → Revelation*
+*Last updated: 22 July 2026 · Torah complete · Resume: Joshua 1*
