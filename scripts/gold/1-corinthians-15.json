@@ -1,0 +1,19 @@
+{
+  "reference": "1 Corinthians 15",
+  "description": "Resurrection chapter — Christ appearances and reign pronouns",
+  "mustContain": [
+    "that He was buried, that He was raised",
+    "that He appeared to Cephas",
+    "Then He appeared to over five hundred",
+    "He appeared to me also",
+    "For He must reign until He has put all His enemies",
+    "He put all things in subjection under His feet",
+    "He is excepted who subjected all things to Him"
+  ],
+  "mustNotContain": [
+    "that he was buried, that he was raised",
+    "that he appeared to Cephas",
+    "For he must reign until he has put all his enemies",
+    "“he put all things in subjection under his feet.”"
+  ]
+}
