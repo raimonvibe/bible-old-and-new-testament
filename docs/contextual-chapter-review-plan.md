@@ -85,7 +85,7 @@ Review in this exact sequence. Check off each book when all chapters are reviewe
 | # | Book | Chapters | Status |
 |---|------|----------|--------|
 | 1 | Genesis | 50 | ✓ reviewed |
-| 2 | Exodus | 40 | |
+| 2 | Exodus | 40 | ✓ reviewed |
 | 3 | Leviticus | 27 | |
 | 4 | Numbers | 36 | |
 | 5 | Deuteronomy | 34 | |

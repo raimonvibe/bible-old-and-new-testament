@@ -3,11 +3,16 @@
   "description": "Pilot — burning bush; Moses he mid-sentence, He at sentence start after period",
   "mustContain": [
     "Now Moses was keeping the flock of Jethro, his father-in-law, the priest of Midian, and he led the flock",
-    "Yahweh’s angel appeared to him in a flame of fire out of the middle of a bush. He looked, and behold, the bush burned with fire"
+    "Yahweh’s angel appeared to him in a flame of fire out of the middle of a bush. He looked, and behold, the bush burned with fire",
+    "When Yahweh saw that he came over to see, God called to him",
+    "Moreover He said, “I am the God of your father",
+    "I AM WHO I AM,” and He said, “You shall tell the children of Israel"
   ],
   "mustNotContain": [
     "and He led the flock to the back of the wilderness",
     "Yahweh’s angel appeared to Him in a flame",
-    "Yahweh was with Moses, and He was"
+    "Yahweh was with Moses, and He was",
+    "When Yahweh saw that He came over to see",
+    "Moreover he said, “I am the God of your father"
   ]
 }
