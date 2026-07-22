@@ -1,0 +1,13 @@
+{
+  "reference": "Genesis 1",
+  "description": "Pilot — creation; God as subject, our/us lowercase in speech",
+  "mustContain": [
+    "God called the light “day”, and the darkness He called “night”.",
+    "God created man in His own image. In God’s image He created him; male and female He created them."
+  ],
+  "mustNotContain": [
+    "and the darkness he called “night”.",
+    "In God’s image he created Him;",
+    "Let us make man in Our image"
+  ]
+}

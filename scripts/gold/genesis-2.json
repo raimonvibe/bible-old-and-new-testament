@@ -1,0 +1,12 @@
+{
+  "reference": "Genesis 2",
+  "description": "Pilot — Sabbath rest; His work, He rested",
+  "mustContain": [
+    "On the seventh day God finished His work which He had done; and He rested on the seventh day from all His work which He had done.",
+    "God blessed the seventh day, and made it holy, because He rested in it from all His work of creation which He had done."
+  ],
+  "mustNotContain": [
+    "God finished his work which he had done",
+    "because he rested in it from all his work"
+  ]
+}
