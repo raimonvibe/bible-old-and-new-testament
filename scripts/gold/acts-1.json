@@ -1,0 +1,13 @@
+{
+  "reference": "Acts 1",
+  "description": "Pilot — ascension; He for Jesus, not Peter/Paul narrative",
+  "mustContain": [
+    "until the day in which He was received up, after He had given commandment through the Holy Spirit to the apostles whom He had chosen.",
+    "He commanded them, “Don\u2019t depart from Jerusalem, but wait for the promise of the Father",
+    "When He had said these things, as they were looking, He was taken up, and a cloud received Him out of their sight."
+  ],
+  "mustNotContain": [
+    "he commanded them, “Don\u2019t depart from Jerusalem",
+    "he was taken up, and a cloud received him out of their sight."
+  ]
+}

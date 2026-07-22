@@ -1,0 +1,13 @@
+{
+  "reference": "Luke 4",
+  "description": "Pilot — temptation; Jesus in wilderness, devil addresses Him",
+  "mustContain": [
+    "He ate nothing in those days. Afterward, when they were completed, He was hungry.",
+    "The devil said to Him, “If you are the Son of God, command this stone to become bread.”",
+    "Jesus answered him, “Get behind me, Satan!"
+  ],
+  "mustNotContain": [
+    "he ate nothing in those days. Afterward, when they were completed, he was hungry.",
+    "Jesus answered Him, “Get behind me, Satan!"
+  ]
+}
