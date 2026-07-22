@@ -29,4 +29,4 @@ Gold chapters: Revelation 1, Revelation 19.
 
 ## Next
 
-Gospels (Matthew → John), then Old Testament.
+Matthew, Luke, John, Acts.

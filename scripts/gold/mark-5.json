@@ -1,0 +1,16 @@
+{
+  "reference": "Mark 5",
+  "description": "Pilot — demoniac vs Jesus; power went out from Him",
+  "mustContain": [
+    "When he saw Jesus from afar, he ran and bowed down to Him",
+    "For He said to him, \u201cCome out of the man, you unclean spirit!\u201d",
+    "perceiving in Himself that the power had gone out from Him",
+    "He didn\u2019t allow him, but said to him"
+  ],
+  "mustNotContain": [
+    "When He saw Jesus from afar, He ran",
+    "For he said to him, \u201cCome out of the man",
+    "perceiving in himself that the power had gone out from him",
+    "He didn\u2019t allow Him, but said to Him"
+  ]
+}

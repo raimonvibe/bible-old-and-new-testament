@@ -1,0 +1,13 @@
+{
+  "reference": "Mark 2",
+  "description": "Pilot — Jesus perceives in His spirit; Son of Man authority",
+  "mustContain": [
+    "perceiving in His spirit that they so reasoned",
+    "He said to the paralytic",
+    "He was going on the Sabbath day through the grain fields; and His disciples began"
+  ],
+  "mustNotContain": [
+    "perceiving in his spirit that they so reasoned",
+    "he was going on the Sabbath day through the grain fields; and his disciples began"
+  ]
+}
