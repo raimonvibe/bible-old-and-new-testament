@@ -1,0 +1,31 @@
+{
+  "reference": "Romans 9",
+  "description": "Gold-standard expectations after contextual capitalization pass (pilot)",
+  "mustContain": [
+    "For He said to Moses",
+    "not of him who wills, nor of him who runs",
+    "He has mercy on whom He desires, and He hardens whom He desires",
+    "Why does He still find fault",
+    "who withstands His will",
+    "Him who formed it",
+    "His wrath",
+    "He might make known the riches of His glory",
+    "which He prepared beforehand",
+    "whom He also called",
+    "for He will finish the work",
+    "believes in Him will be disappointed",
+    "of Him who calls"
+  ],
+  "mustNotContain": [
+    "not of Him who wills",
+    "not of Him who runs",
+    "For he said to Moses",
+    "he has mercy on whom he desires",
+    "Why does he still find fault",
+    "who withstands his will",
+    "that he might make known the riches of his glory",
+    "which he prepared beforehand",
+    "whom he also called",
+    "believes in him will be disappointed"
+  ]
+}
