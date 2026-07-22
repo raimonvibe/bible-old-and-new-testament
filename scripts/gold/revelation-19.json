@@ -1,0 +1,19 @@
+{
+  "reference": "Revelation 19",
+  "description": "God's judgments and Christ the rider on the white horse",
+  "mustContain": [
+    "For He has judged the great prostitute",
+    "He who sat on it is called Faithful and True",
+    "His eyes are a flame of fire",
+    "His name is called",
+    "Out of His mouth proceeds a sharp, double-edged sword",
+    "Him who sat on the horse"
+  ],
+  "mustNotContain": [
+    "For he has judged the great prostitute",
+    "he who sat on it is called Faithful and True",
+    "his eyes are a flame of fire",
+    "Out of his mouth proceeds",
+    "him who sat on the horse"
+  ]
+}

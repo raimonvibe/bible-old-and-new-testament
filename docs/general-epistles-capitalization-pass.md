@@ -32,4 +32,4 @@ Gold chapters: Hebrews 1, 1 John 4.
 
 ## Next
 
-Revelation, then Gospels.
+Gospels (Matthew → John), then Old Testament.

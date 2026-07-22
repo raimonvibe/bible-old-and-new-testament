@@ -1,0 +1,19 @@
+{
+  "reference": "Revelation 1",
+  "description": "Christ coming and apocalyptic vision",
+  "mustContain": [
+    "Behold, He is coming with the clouds",
+    "every eye will see Him",
+    "His head and His hair were white",
+    "He had seven stars in His right hand",
+    "When I saw Him, I fell at His feet",
+    "He laid His right hand on me"
+  ],
+  "mustNotContain": [
+    "Behold, he is coming with the clouds",
+    "every eye will see him, including those who pierced him",
+    "his head and his hair were white",
+    "he had seven stars in his right hand",
+    "When I saw him, I fell at his feet"
+  ]
+}
