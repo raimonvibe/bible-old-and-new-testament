@@ -1,0 +1,13 @@
+{
+  "reference": "Joshua 1",
+  "description": "Pilot — Yahweh's promise to Joshua; Moses human, God reverential",
+  "mustContain": [
+    "until Yahweh has given your brothers rest, as He has given you",
+    "Only may Yahweh your God be with you, as He was with Moses."
+  ],
+  "mustNotContain": [
+    "as he has given you",
+    "as he was with Moses",
+    "Moses He led"
+  ]
+}

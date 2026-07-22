@@ -1,0 +1,11 @@
+{
+  "reference": "1 Kings 8",
+  "description": "Pilot — Solomon quotes Yahweh dwelling; Solomon human he said",
+  "mustContain": [
+    "Yahweh has said that He would dwell in the thick darkness."
+  ],
+  "mustNotContain": [
+    "Yahweh has said that he would dwell",
+    "Solomon He assembled"
+  ]
+}

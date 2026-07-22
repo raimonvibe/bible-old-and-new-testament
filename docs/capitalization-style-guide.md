@@ -29,6 +29,15 @@ Do **not** change WEB wording — capitalization only.
 | Believers / groups | “us, whom **He** also called” — **us** stays lowercase; **He** (God) is capitalized |
 | Demonic / animal | Usually lowercase unless clearly referring to Jesus |
 
+## Sentence-initial pronouns (English grammar)
+
+Capitalize the first word of a sentence normally — including pronouns — even when the referent is human:
+
+- Acts 19:3 — **He** said, “Into what then were you baptized?” (Paul; sentence start)
+- Mid-sentence, same human — lowercase: “…the multitude, **he** departed from them” (Acts 19:9)
+
+This is **grammar**, not reverential capitalization. Do not lowercase sentence-initial pronouns to match WEB’s all-lowercase habit.
+
 ## First person plural — do NOT capitalize
 
 Keep `We`, `Us`, `Our` lowercase even in divine speech:
@@ -68,6 +77,7 @@ When uncertain, prefer lowercase and add to the flagged-verses list for manual r
 3. Record changes with verse-level reasons
 4. Run `node scripts/validate-capitalization.js` for gold chapters
 5. Do **not** re-run regex capitalize scripts after AI pass
+6. **After the entire app is done** — run the final sentence-initial pass (see `docs/final-sentence-capitalization-pass.md`)
 
 ## Gold-standard pilot chapters
 

@@ -41,4 +41,4 @@ Gold chapters: Genesis 1–3, Exodus 3.
 
 ## Next
 
-Historical books (Joshua–Esther), then Poetry, then Prophets.
+Historical books (Joshua–Esther) — see `historical-books-capitalization-pass.md`. Next: Poetry, then Prophets.

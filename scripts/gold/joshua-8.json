@@ -1,0 +1,12 @@
+{
+  "reference": "Joshua 8",
+  "description": "Pilot — Yahweh commanded Joshua; Joshua burned Ai as human actor",
+  "mustContain": [
+    "according to Yahweh’s word which He commanded Joshua",
+    "So Joshua burned Ai"
+  ],
+  "mustNotContain": [
+    "which he commanded Joshua",
+    "So He caused Yahweh’s ark"
+  ]
+}
