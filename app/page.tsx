@@ -5,10 +5,10 @@ import BookSelector from '@/components/BookSelector'
 import ChapterSelector from '@/components/ChapterSelector'
 import BibleReader from '@/components/BibleReader'
 import ThemeToggle from '@/components/ThemeToggle'
-import { BookMarked, Heart, Search } from 'lucide-react'
+import { BookMarked, Search } from 'lucide-react'
 import AdvancedSearch from '@/components/AdvancedSearch'
 import type { SearchResult } from '@/lib/bibleSearch'
-
+import SiteFooter from '@/components/SiteFooter'
 interface Chapter {
   id: string
   number: string
@@ -228,17 +228,14 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <footer data-read-aloud-ignore className="text-center text-beige-600 dark:text-brown-400 font-sans text-sm md:text-base py-8">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <span>Made with</span>
-            <Heart className="w-4 h-4 fill-beige-600 dark:fill-brown-400" />
-            <span>for Bible readers</span>
-          </div>
-          <p className="text-beige-500 dark:text-brown-500 text-xs md:text-sm">
-            {bibleData.bibleName} • {bibleData.books.length} Books •{' '}
-            {bibleData.books.reduce((sum, book) => sum + book.chapters.length, 0)} Chapters
-          </p>
-        </footer>
+        <SiteFooter
+          bookCount={bibleData.books.length}
+          chapterCount={bibleData.books.reduce(
+            (sum, book) => sum + book.chapters.length,
+            0
+          )}
+        />
+
       </div>
     </div>
   )
