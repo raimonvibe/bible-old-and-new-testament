@@ -133,6 +133,11 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
+  // Lets the page extend under the iPhone notch / home-indicator safe areas
+  // instead of the browser reserving that strip and showing its own chrome
+  // color (typically white) there. The CSS already reads env(safe-area-inset-*)
+  // for the tour panel and listen button, but those resolve to 0 without this.
+  viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#f5f1e8' },
     { media: '(prefers-color-scheme: dark)', color: '#2c1f14' },
