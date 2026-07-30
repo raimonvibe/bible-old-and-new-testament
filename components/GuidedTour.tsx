@@ -143,7 +143,15 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
     setVoiceSheetOpen(false)
   }, [])
 
+  const restart = useCallback(() => {
+    setStepIndex(0)
+    setFurthestStep(0)
+  }, [])
+
   const start = useCallback(() => {
+    // After a completed tour, always reopen on the welcome step.
+    setStepIndex((current) => (current >= LAST_STEP ? 0 : current))
+    setFurthestStep((furthest) => (furthest >= LAST_STEP ? 0 : furthest))
     setOpen(true)
     setMinimized(false)
     setSeen(true)
@@ -155,17 +163,15 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
   }, [])
 
   const exit = useCallback(() => {
+    // Leaving from the closing card counts as finished — next start is welcome.
+    setStepIndex((current) => (current >= LAST_STEP ? 0 : current))
+    setFurthestStep((furthest) => (furthest >= LAST_STEP ? 0 : furthest))
     setOpen(false)
     setMinimized(false)
     setVoiceSheetOpen(false)
     stopNarration()
     navigateRef.current(null)
   }, [stopNarration])
-
-  const restart = useCallback(() => {
-    setStepIndex(0)
-    setFurthestStep(0)
-  }, [])
 
   const skipMoment = useCallback(() => {
     if (momentIndex === null) return
