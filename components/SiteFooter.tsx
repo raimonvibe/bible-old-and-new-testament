@@ -76,42 +76,21 @@ export default function SiteFooter({
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-10">
         <div className="grid md:grid-cols-2 gap-10">
           <div>
-            <h5 className="font-display font-semibold text-lg text-beige-900 dark:text-brown-50 mb-3">
+            <h2 className="font-display font-semibold text-lg text-beige-900 dark:text-brown-50 mb-3">
               The Holy Bible Reader
-            </h5>
+            </h2>
 
             {bookCount != null && chapterCount != null && (
-              <p className="font-sans text-sm text-beige-600 dark:text-brown-400 mb-4">
+              <p className="font-sans text-sm text-beige-600 dark:text-brown-400">
                 World English Bible · {bookCount} Books · {chapterCount} Chapters
               </p>
             )}
-
-            <p className="font-sans text-sm text-beige-600 dark:text-brown-400 leading-relaxed">
-              Cover photo by{' '}
-              <a
-                href="https://www.pexels.com/@chris-f-38966/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-beige-800 dark:text-brown-200 underline underline-offset-2 hover:text-beige-900 dark:hover:text-brown-50 transition-colors"
-              >
-                Chris F
-              </a>{' '}
-              on{' '}
-              <a
-                href="https://www.pexels.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-beige-800 dark:text-brown-200 underline underline-offset-2 hover:text-beige-900 dark:hover:text-brown-50 transition-colors"
-              >
-                Pexels
-              </a>
-            </p>
           </div>
 
           <div>
-            <h5 className="font-display font-semibold text-lg text-beige-900 dark:text-brown-50 mb-4">
+            <h2 className="font-display font-semibold text-lg text-beige-900 dark:text-brown-50 mb-4">
               Connect with Raimon
-            </h5>
+            </h2>
 
             <ul className="grid grid-cols-4 gap-3 list-none p-0 m-0">
               {SOCIAL_LINKS.map((link) => (

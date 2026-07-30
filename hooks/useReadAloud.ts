@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   clearChunkHighlights,
-  filterVoices,
   getReadableChunks,
   getSelectionChunk,
   highlightChunk,
   pickDefaultVoice,
   updateSelectionCache,
+  usableVoices,
   type ReadChunk,
 } from '@/lib/readAloud'
 
@@ -59,7 +59,7 @@ export function useReadAloud() {
 
   const loadVoices = useCallback(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return
-    const list = filterVoices(window.speechSynthesis.getVoices())
+    const list = usableVoices(window.speechSynthesis.getVoices())
     setVoices(list)
     setVoiceURI((current) => {
       if (current && list.some((v) => v.voiceURI === current)) return current
@@ -208,6 +208,9 @@ export function useReadAloud() {
       setChunks(list)
       indexRef.current = 0
       setCurrentIndex(0)
+
+      // Lets the guided tour's narration stand down rather than talk over us.
+      window.dispatchEvent(new CustomEvent('read-aloud-started'))
 
       window.setTimeout(() => speakChunk(0), 50)
       return true

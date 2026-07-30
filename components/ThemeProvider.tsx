@@ -35,10 +35,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const toggleTheme = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'))
 
-  if (!mounted) {
-    return <div className="min-h-screen bg-theme-light">{children}</div>
-  }
-
+  // The context is provided during SSR too. Skipping it used to make
+  // useTheme() throw on the server, which aborted server rendering of the whole
+  // page and left crawlers with an empty document. `theme` starts as 'light' on
+  // both server and client, so the first render matches and the real theme is
+  // applied by the effect above; the inline script in the layout has already
+  // set the `dark` class, so there is no flash.
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}

@@ -186,6 +186,268 @@
   .animate-listen-panel-in {
     animation: listen-panel-in 0.28s ease-out;
   }
+
+  /* ---------------------------------------------------------------------
+   * Guided tour — "One Story, Five Voices"
+   * Anchored bottom-right, mirroring the bottom-left listen controls.
+   * ------------------------------------------------------------------- */
+
+  .tour-anchor {
+    position: fixed;
+    right: max(1rem, env(safe-area-inset-right, 0px));
+    bottom: calc(
+      max(1rem, env(safe-area-inset-bottom, 0px)) + var(--vv-offset-bottom, 0px)
+    );
+    left: auto;
+    top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.75rem;
+    max-width: min(calc(100vw - 2rem), 25rem);
+    pointer-events: none;
+  }
+
+  @media (min-width: 640px) {
+    .tour-anchor {
+      right: 1.5rem;
+      bottom: calc(1.5rem + var(--vv-offset-bottom, 0px));
+    }
+  }
+
+  .tour-fab {
+    position: relative;
+    background: linear-gradient(135deg, #7d6e56 0%, #5e5342 55%, #3f382d 100%);
+    box-shadow: 0 6px 28px rgba(94, 83, 66, 0.35);
+  }
+
+  html.dark .tour-fab {
+    background: linear-gradient(135deg, #7d6349 0%, #4d3b2e 55%, #2c1f14 100%);
+    box-shadow: 0 6px 28px rgba(26, 18, 12, 0.5);
+  }
+
+  /* Opaque on purpose: the panel sits directly over running text, and any
+     translucency makes both the panel and the passage harder to read. */
+  .tour-panel-shell {
+    background: #fffdf8;
+    border: 1px solid rgba(212, 197, 169, 0.9);
+  }
+
+  html.dark .tour-panel-shell {
+    background: #1c140e;
+    border-color: rgba(77, 59, 46, 0.95);
+  }
+
+  .tour-panel {
+    width: min(calc(100vw - 2rem), 25rem);
+    max-height: min(
+      78dvh,
+      calc(
+        var(--vv-height, 100dvh) - 5rem - env(safe-area-inset-top, 0px) -
+          var(--vv-offset-bottom, 0px)
+      )
+    );
+    animation: tour-panel-in 0.3s ease-out;
+  }
+
+  /* Reserved by the guided tour so no line of text runs under a side-docked
+     panel. Zero whenever the tour is closed or is acting as a bottom sheet. */
+  .tour-safe-inset {
+    padding-right: var(--reader-safe-right, 0px);
+    transition: padding-right 0.3s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tour-safe-inset {
+      transition: none;
+    }
+  }
+
+  /* Too narrow to keep a reading column beside the panel, so it becomes a
+     bottom sheet: keep it short enough that the passage stays visible above it.
+     Breakpoint = 25rem panel + MIN_READING_COLUMN + PANEL_GUTTER in
+     components/GuidedTour.tsx. */
+  @media (max-width: 867px) {
+    .tour-panel {
+      max-height: min(
+        58dvh,
+        calc(
+          var(--vv-height, 100dvh) - 6rem - env(safe-area-inset-top, 0px) -
+            var(--vv-offset-bottom, 0px)
+        )
+      );
+    }
+
+    /* Nothing to keep in view behind the narration settings, so give them room. */
+    .tour-panel[data-voice-sheet='true'] {
+      max-height: min(
+        82dvh,
+        calc(
+          var(--vv-height, 100dvh) - 4rem - env(safe-area-inset-top, 0px) -
+            var(--vv-offset-bottom, 0px)
+        )
+      );
+    }
+  }
+
+  /* Landscape phones and short windows: reclaim every pixel and drop the
+     keyboard hint, which is the least useful line on a touch device anyway.
+     Scoped to wider viewports — on a window that is both narrow and short the
+     rule above must win, or the sheet swallows the whole screen. */
+  @media (max-height: 560px) and (min-width: 640px) {
+    .tour-panel {
+      max-height: calc(
+        var(--vv-height, 100dvh) - 2.5rem - env(safe-area-inset-top, 0px) -
+          var(--vv-offset-bottom, 0px)
+      );
+    }
+
+    .tour-hint {
+      display: none;
+    }
+  }
+
+  .tour-panel-body {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #d4c5a9 transparent;
+  }
+
+  html.dark .tour-panel-body {
+    scrollbar-color: #4d3b2e transparent;
+  }
+
+  .tour-panel-body::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .tour-panel-body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .tour-panel-body::-webkit-scrollbar-thumb {
+    background: #d4c5a9;
+    border-radius: 9999px;
+  }
+
+  html.dark .tour-panel-body::-webkit-scrollbar-thumb {
+    background: #4d3b2e;
+  }
+
+  .tour-icon-btn {
+    @apply flex min-h-9 min-w-9 items-center justify-center rounded-lg
+      text-beige-600 transition-colors hover:bg-beige-200/70 hover:text-beige-900
+      dark:text-brown-400 dark:hover:bg-brown-800/70 dark:hover:text-brown-100;
+  }
+
+  /* Speech toggle + its options caret, read as one control. */
+  .tour-speech-control {
+    @apply rounded-lg;
+  }
+
+  .tour-icon-btn-on {
+    @apply bg-beige-200/80 text-beige-900 dark:bg-brown-800 dark:text-brown-50;
+  }
+
+  .tour-icon-btn-slim {
+    @apply min-w-7;
+  }
+
+  .tour-speaking {
+    animation: tour-speaking 1.4s ease-in-out infinite;
+  }
+
+  @keyframes tour-speaking {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.55;
+      transform: scale(0.88);
+    }
+  }
+
+  .tour-voice-sheet {
+    background: #fffdf8;
+  }
+
+  html.dark .tour-voice-sheet {
+    background: #1c140e;
+  }
+
+  .tour-progress-bar {
+    background: linear-gradient(90deg, #c5b494 0%, #9d8a6b 100%);
+  }
+
+  html.dark .tour-progress-bar {
+    background: linear-gradient(90deg, #b89d82 0%, #7d6349 100%);
+  }
+
+  .tour-next-btn {
+    background: linear-gradient(135deg, #7d6e56 0%, #5e5342 100%);
+    color: #faf8f3;
+  }
+
+  html.dark .tour-next-btn {
+    background: linear-gradient(135deg, #9a7d5f 0%, #634d3a 100%);
+    color: #f7f3ef;
+  }
+
+  @keyframes tour-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(18px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* The passage the tour is currently talking about. */
+  .verse-spotlight {
+    border-radius: 0.5rem;
+    margin-left: -0.85rem;
+    padding: 0.35rem 0.6rem 0.35rem 0.85rem;
+    background: linear-gradient(
+      90deg,
+      rgba(245, 208, 137, 0.5) 0%,
+      rgba(245, 208, 137, 0.14) 100%
+    );
+    box-shadow: inset 3px 0 0 0 #b45309;
+    animation: verse-spotlight-in 0.6s ease-out;
+  }
+
+  html.dark .verse-spotlight {
+    background: linear-gradient(
+      90deg,
+      rgba(190, 130, 45, 0.32) 0%,
+      rgba(190, 130, 45, 0.08) 100%
+    );
+    box-shadow: inset 3px 0 0 0 #f59e0b;
+  }
+
+  @keyframes verse-spotlight-in {
+    from {
+      opacity: 0.55;
+      transform: translateX(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tour-panel,
+    .verse-spotlight,
+    .tour-speaking {
+      animation: none;
+    }
+  }
 }
 
 @layer utilities {

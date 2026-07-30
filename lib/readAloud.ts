@@ -209,10 +209,64 @@ export function sortVoices(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice
   })
 }
 
-export function filterVoices(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
-  const english = voices.filter((v) => v.lang.startsWith('en'))
-  const pool = english.length > 0 ? english : voices
-  return sortVoices(pool)
+/**
+ * Joke and character voices the operating system ships alongside real ones.
+ * Apple's "Novelty" set (Bubbles, Zarvox, Bad News…) all report as en-US, so
+ * filtering by language does not remove them — they have to be named. The
+ * second block is the Eloquence-era character set added in recent macOS/iOS,
+ * which exists in many languages and is equally wrong for scripture.
+ */
+const NOVELTY_VOICE_NAMES = new Set([
+  'albert',
+  'bad news',
+  'bahh',
+  'bells',
+  'boing',
+  'bubbles',
+  'cellos',
+  'deranged',
+  'fred',
+  'good news',
+  'hysterical',
+  'jester',
+  'organ',
+  'pipe organ',
+  'superstar',
+  'trinoids',
+  'whisper',
+  'wobble',
+  'zarvox',
+  // character voices
+  'eddy',
+  'flo',
+  'grandma',
+  'grandpa',
+  'reed',
+  'rocko',
+  'sandy',
+  'shelley',
+])
+
+/** "Grandma (Deutsch (Deutschland))" → "grandma"; "Microsoft David - English" → "microsoft david" */
+function baseVoiceName(name: string): string {
+  return name.split('(')[0].split(' - ')[0].trim().toLowerCase()
+}
+
+export function isNoveltyVoice(voice: SpeechSynthesisVoice): boolean {
+  if (/eloquence/i.test(voice.name)) return true
+  return NOVELTY_VOICE_NAMES.has(baseVoiceName(voice.name))
+}
+
+/**
+ * Every genuine voice on the device, best first, across all languages.
+ * Falls back to the raw list if a device somehow offers nothing else, so the
+ * reader never ends up with an empty picker.
+ */
+export function usableVoices(
+  voices: SpeechSynthesisVoice[],
+): SpeechSynthesisVoice[] {
+  const genuine = voices.filter((v) => !isNoveltyVoice(v))
+  return sortVoices(genuine.length > 0 ? genuine : voices)
 }
 
 export function pickDefaultVoice(
@@ -224,7 +278,11 @@ export function pickDefaultVoice(
     if (saved) return saved
   }
 
-  return voices.find((v) => !v.localService) ?? voices[0]
+  // The text is English, so start on an English voice even though every
+  // language is on offer — sortVoices has already put the best one first.
+  const english = voices.filter((v) => v.lang.startsWith('en'))
+  const pool = english.length > 0 ? english : voices
+  return pool.find((v) => !v.localService) ?? pool[0]
 }
 
 export function formatVoiceLabel(voice: SpeechSynthesisVoice): string {
@@ -233,19 +291,50 @@ export function formatVoiceLabel(voice: SpeechSynthesisVoice): string {
   return `${voice.name} (${lang}, ${tag})`
 }
 
-export function groupVoicesBySource(
+/** "nl-NL" → "Dutch (Netherlands)", falling back to the raw tag. */
+export function describeLanguage(tag: string): string {
+  const normalised = tag.replace('_', '-')
+  try {
+    const [language, region] = normalised.split('-')
+    const languageNames = new Intl.DisplayNames(['en'], { type: 'language' })
+    const name = languageNames.of(language) ?? language
+    if (!region) return name
+    const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
+    return `${name} (${regionNames.of(region.toUpperCase()) ?? region})`
+  } catch {
+    return normalised
+  }
+}
+
+/**
+ * Voices grouped by spoken language, for the pickers in the reader and the
+ * guided tour. Pair with usableVoices so novelty voices never reach the list.
+ */
+export function groupVoicesByLanguage(
   voices: SpeechSynthesisVoice[],
 ): { label: string; voices: SpeechSynthesisVoice[] }[] {
-  const network = voices.filter((v) => !v.localService)
-  const local = voices.filter((v) => v.localService)
-  const groups: { label: string; voices: SpeechSynthesisVoice[] }[] = []
+  const byLanguage = new Map<string, SpeechSynthesisVoice[]>()
 
-  if (network.length) {
-    groups.push({ label: 'Network voices (recommended)', voices: sortVoices(network) })
-  }
-  if (local.length) {
-    groups.push({ label: 'Local voices', voices: sortVoices(local) })
+  for (const voice of voices) {
+    const tag = voice.lang.replace('_', '-')
+    const list = byLanguage.get(tag) ?? []
+    list.push(voice)
+    byLanguage.set(tag, list)
   }
 
-  return groups
+  return [...byLanguage.entries()]
+    .map(([tag, list]) => ({
+      tag,
+      label: describeLanguage(tag),
+      voices: sortVoices(list),
+    }))
+    .sort((a, b) => {
+      // The text is English, so English voices lead; the rest are alphabetical.
+      const aEnglish = a.tag.startsWith('en')
+      const bEnglish = b.tag.startsWith('en')
+      if (aEnglish !== bEnglish) return aEnglish ? -1 : 1
+      return a.label.localeCompare(b.label)
+    })
+    .map(({ label, voices: list }) => ({ label, voices: list }))
 }
+

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import FixedViewportLayer from '@/components/FixedViewportLayer'
 import { useReadAloud } from '@/hooks/useReadAloud'
-import { formatVoiceLabel, groupVoicesBySource } from '@/lib/readAloud'
+import { formatVoiceLabel, groupVoicesByLanguage } from '@/lib/readAloud'
 
 const SPEEDS = [0.75, 1, 1.25, 1.5]
 
@@ -309,7 +309,7 @@ export default function ReadAloudToolbar() {
                     {voices.length === 0 ? (
                       <option value="">Loading voices…</option>
                     ) : (
-                      groupVoicesBySource(voices).map((group) => (
+                      groupVoicesByLanguage(voices).map((group) => (
                         <optgroup key={group.label} label={group.label}>
                           {group.voices.map((v) => (
                             <option key={v.voiceURI} value={v.voiceURI}>

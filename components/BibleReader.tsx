@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Eye, EyeOff, Home } from 'lucide-react'
 
 interface Chapter {
@@ -19,7 +19,12 @@ interface BibleReaderProps {
   hasPrev: boolean
   hasNext: boolean
   onBackToBooks?: () => void
+  /** Inclusive verse range to spotlight, e.g. from the guided tour. */
+  highlightVerses?: [number, number] | null
 }
+
+/** Anchor id given to the first highlighted verse so it can be scrolled to. */
+const HIGHLIGHT_ANCHOR_ID = 'verse-highlight-anchor'
 
 const VERSE_MARKER = /(\s*\[\d+\]\s*)/
 
@@ -37,19 +42,24 @@ function formatChapterHtml(
   reference: string,
   bookName: string,
   chapterNumber: string,
+  highlightVerses?: [number, number] | null,
 ): string {
   const parts = content.split(VERSE_MARKER)
-  const verses: string[] = []
+  const verses: { num: number | null; html: string }[] = []
+  let currentNum: number | null = null
   let current = ''
+
+  const flush = () => {
+    if (current.trim()) verses.push({ num: currentNum, html: current.trim() })
+    current = ''
+  }
 
   for (const part of parts) {
     if (!part) continue
     if (VERSE_MARKER.test(part)) {
-      if (current.trim()) {
-        verses.push(current.trim())
-        current = ''
-      }
+      flush()
       const num = part.match(/\[(\d+)\]/)?.[1]
+      currentNum = num ? Number(num) : null
       if (showVerseNumbers && num) {
         current += `<sup class="verse-num">[${num}]</sup> `
       }
@@ -58,14 +68,36 @@ function formatChapterHtml(
     }
   }
 
-  if (current.trim()) verses.push(current.trim())
+  flush()
 
   if (verses.length === 0) {
     return `<p class="verse">${escapeHtml(content)}</p>`
   }
 
+  const [from, to] = highlightVerses ?? [0, -1]
+  let anchored = false
+
   const intro = `<p class="verse">${escapeHtml(reference)}. ${escapeHtml(bookName)}, chapter ${escapeHtml(chapterNumber)}.</p>`
-  return intro + verses.map((text) => `<p class="verse">${text}</p>`).join('')
+
+  const body = verses
+    .map(({ num, html }) => {
+      const spotlit = num !== null && num >= from && num <= to
+      const isAnchor = spotlit && !anchored
+      if (isAnchor) anchored = true
+
+      const attrs = [
+        `class="verse${spotlit ? ' verse-spotlight' : ''}"`,
+        num !== null ? `data-verse="${num}"` : '',
+        isAnchor ? `id="${HIGHLIGHT_ANCHOR_ID}"` : '',
+      ]
+        .filter(Boolean)
+        .join(' ')
+
+      return `<p ${attrs}>${html}</p>`
+    })
+    .join('')
+
+  return intro + body
 }
 
 export default function BibleReader({
@@ -77,6 +109,7 @@ export default function BibleReader({
   hasPrev,
   hasNext,
   onBackToBooks,
+  highlightVerses = null,
 }: BibleReaderProps) {
   const [showVerseNumbers, setShowVerseNumbers] = useState(true)
 
@@ -88,9 +121,54 @@ export default function BibleReader({
         chapter.reference,
         bookName,
         chapter.number,
+        highlightVerses,
       ),
-    [chapter.content, showVerseNumbers, chapter.reference, chapter.number, bookName],
+    [
+      chapter.content,
+      showVerseNumbers,
+      chapter.reference,
+      chapter.number,
+      bookName,
+      highlightVerses,
+    ],
   )
+
+  // Bring the spotlit passage into view whenever the tour moves to a new one.
+  const highlightKey = highlightVerses
+    ? `${chapter.id}:${highlightVerses[0]}-${highlightVerses[1]}`
+    : null
+
+  useEffect(() => {
+    if (!highlightKey) return
+    const anchor = document.getElementById(HIGHLIGHT_ANCHOR_ID)
+    if (!anchor) return
+
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
+
+    // Let the new chapter paint before measuring.
+    const id = window.requestAnimationFrame(() => {
+      // An overlay (the guided tour on narrow screens) may be covering the
+      // bottom of the viewport; centre the passage in what is left.
+      const safeBottom =
+        parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue(
+            '--reader-safe-bottom',
+          ),
+        ) || 0
+
+      const rect = anchor.getBoundingClientRect()
+      const visibleHeight = window.innerHeight - safeBottom
+      const offsetFromTop = Math.max(16, (visibleHeight - rect.height) / 2)
+
+      window.scrollTo({
+        top: Math.max(0, window.scrollY + rect.top - offsetFromTop),
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      })
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [highlightKey, processedContent])
 
   return (
     <article className="card-surface p-4 md:p-6 lg:p-10">
@@ -178,6 +256,17 @@ export default function BibleReader({
         <p className="text-beige-600 dark:text-brown-400 font-sans text-sm md:text-base">
           {bookName} - Chapter {chapter.number}
         </p>
+
+        {highlightVerses && (
+          <p
+            data-read-aloud-ignore
+            className="mt-3 inline-flex items-center gap-2 rounded-full bg-amber-100/80 px-3 py-1 font-sans text-xs font-medium text-amber-900 dark:bg-amber-900/40 dark:text-amber-100"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-600 dark:bg-amber-300" />
+            Highlighted: verses {highlightVerses[0]}
+            {highlightVerses[1] !== highlightVerses[0] && `–${highlightVerses[1]}`}
+          </p>
+        )}
       </div>
 
       <div className="prose max-w-none mb-8">
