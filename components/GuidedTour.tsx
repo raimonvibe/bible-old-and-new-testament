@@ -5,24 +5,42 @@ import { createPortal } from 'react-dom'
 import {
   ArrowRight,
   BookOpen,
+  Castle,
   Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  CloudRain,
   Compass,
   Cross,
+  DoorOpen,
   Droplets,
-  Maximize2,
-  Minimize2,
-  Quote,
-  SkipForward,
+  Fish,
+  Flame,
+  Footprints,
+  Heart,
+  HeartPulse,
   Languages,
+  LifeBuoy,
+  MapPin,
+  Maximize2,
+  MessageCircleQuestionMark,
+  Minimize2,
+  PawPrint,
+  Quote,
   RotateCcw,
+  Scroll,
+  ShieldCheck,
+  SkipForward,
   Sparkles,
   Sunrise,
   Users,
+  Utensils,
   Volume2,
   VolumeX,
+  Waves,
+  Wheat,
+  Wine,
   X,
 } from 'lucide-react'
 import {
@@ -38,7 +56,23 @@ import {
   passageOfStep,
   type MomentId,
   type PassageRef,
+  type TourStep,
 } from '@/lib/guidedTour'
+import {
+  MIRACLE_INTRO,
+  MIRACLE_OUTRO,
+  MIRACLE_STEPS,
+  TESTAMENT_ACCENTS,
+  TESTAMENT_SECTIONS,
+  firstStepOfSection,
+  narrationForMiracleStep,
+  passageOfMiracleStep,
+  sectionIndexOfStep,
+  type MiracleId,
+  type MiracleTourStep,
+  type TestamentId,
+} from '@/lib/miraclesTour'
+import { TOUR_CATALOG, type TourId } from '@/lib/tourCatalog'
 import { useTourNarration } from '@/hooks/useTourNarration'
 import { formatVoiceLabel, groupVoicesByLanguage } from '@/lib/readAloud'
 
@@ -62,8 +96,40 @@ const MOMENT_ICONS: Record<MomentId, IconType> = {
   resurrection: Sunrise,
 }
 
+const TESTAMENT_ICONS: Record<TestamentId, IconType> = {
+  old: Scroll,
+  new: Heart,
+}
+
+const MIRACLE_ICONS: Record<MiracleId, IconType> = {
+  'red-sea': Waves,
+  manna: Wheat,
+  jericho: Castle,
+  'elijah-fire': Flame,
+  'fiery-furnace': ShieldCheck,
+  'lions-den': PawPrint,
+  jonah: Fish,
+  cana: Wine,
+  'calming-storm': CloudRain,
+  'feeding-five-thousand': Utensils,
+  'walking-on-water': Footprints,
+  lazarus: HeartPulse,
+  'bleeding-woman': Heart,
+  'peters-rescue': DoorOpen,
+}
+
+const TOUR_CARD_ICONS: Record<TourId, IconType> = {
+  voices: Users,
+  miracles: LifeBuoy,
+}
+
 const SEEN_KEY = 'bible-tour-seen'
-const LAST_STEP = TOUR_STEPS.length - 1
+
+function lastStepFor(tour: TourId | null): number {
+  if (tour === 'voices') return TOUR_STEPS.length - 1
+  if (tour === 'miracles') return MIRACLE_STEPS.length - 1
+  return 0
+}
 
 /**
  * Narrowest reading column worth keeping beside a side-docked panel, and the
@@ -90,10 +156,28 @@ function targetOf(passage: PassageRef): TourTarget {
   }
 }
 
+interface GroupPill {
+  key: string
+  label: string
+  Icon: IconType
+  firstStep: number
+  reached: boolean
+  active: boolean
+  done: boolean
+}
+
+interface ItemDot {
+  key: string
+  label: string
+  target: number
+  accentDot: string
+}
+
 export default function GuidedTour({ onNavigate }: GuidedTourProps) {
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
   const [minimized, setMinimized] = useState(false)
+  const [selectedTour, setSelectedTour] = useState<TourId | null>(null)
   const [stepIndex, setStepIndex] = useState(0)
   const [furthestStep, setFurthestStep] = useState(0)
   const [seen, setSeen] = useState(true)
@@ -127,21 +211,44 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
     }
   }, [])
 
-  const step = TOUR_STEPS[stepIndex]
-  const momentIndex = momentIndexOfStep(step)
+  const isVoices = selectedTour === 'voices'
+  const isMiracles = selectedTour === 'miracles'
+  const lastStep = lastStepFor(selectedTour)
+
+  const voicesStep: TourStep | null = isVoices ? TOUR_STEPS[stepIndex] : null
+  const miracleStep: MiracleTourStep | null = isMiracles
+    ? MIRACLE_STEPS[stepIndex]
+    : null
+
+  const momentIndex = voicesStep ? momentIndexOfStep(voicesStep) : null
   const moment = momentIndex !== null ? MOMENTS[momentIndex] : null
   const voice =
-    step.kind === 'voice' ? MOMENTS[step.momentIndex].voices[step.voiceIndex] : null
+    voicesStep?.kind === 'voice'
+      ? MOMENTS[voicesStep.momentIndex].voices[voicesStep.voiceIndex]
+      : null
+
+  const sectionIndex = miracleStep ? sectionIndexOfStep(miracleStep) : null
+  const section = sectionIndex !== null ? TESTAMENT_SECTIONS[sectionIndex] : null
+  const miracle =
+    miracleStep?.kind === 'miracle'
+      ? TESTAMENT_SECTIONS[miracleStep.sectionIndex].miracles[
+          miracleStep.miracleIndex
+        ]
+      : null
 
   /* --- navigation ------------------------------------------------------- */
 
-  const goTo = useCallback((next: number) => {
-    const clamped = Math.max(0, Math.min(LAST_STEP, next))
-    setStepIndex(clamped)
-    setFurthestStep((f) => Math.max(f, clamped))
-    setMinimized(false)
-    setVoiceSheetOpen(false)
-  }, [])
+  const goTo = useCallback(
+    (next: number) => {
+      const max = lastStepFor(selectedTour)
+      const clamped = Math.max(0, Math.min(max, next))
+      setStepIndex(clamped)
+      setFurthestStep((f) => Math.max(f, clamped))
+      setMinimized(false)
+      setVoiceSheetOpen(false)
+    },
+    [selectedTour],
+  )
 
   const restart = useCallback(() => {
     setStepIndex(0)
@@ -149,9 +256,11 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
   }, [])
 
   const start = useCallback(() => {
-    // After a completed tour, always reopen on the welcome step.
-    setStepIndex((current) => (current >= LAST_STEP ? 0 : current))
-    setFurthestStep((furthest) => (furthest >= LAST_STEP ? 0 : furthest))
+    // The launcher always opens on the tour picker, so a fresh choice is made
+    // each time the overlay is opened from fully closed.
+    setSelectedTour(null)
+    setStepIndex(0)
+    setFurthestStep(0)
     setOpen(true)
     setMinimized(false)
     setSeen(true)
@@ -162,29 +271,54 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
     }
   }, [])
 
+  const selectTour = useCallback((id: TourId) => {
+    setSelectedTour(id)
+    setStepIndex(0)
+    setFurthestStep(0)
+    setVoiceSheetOpen(false)
+  }, [])
+
+  const backToSelector = useCallback(() => {
+    setSelectedTour(null)
+    setStepIndex(0)
+    setFurthestStep(0)
+    setVoiceSheetOpen(false)
+    stopNarration()
+  }, [stopNarration])
+
   const exit = useCallback(() => {
-    // Leaving from the closing card counts as finished — next start is welcome.
-    setStepIndex((current) => (current >= LAST_STEP ? 0 : current))
-    setFurthestStep((furthest) => (furthest >= LAST_STEP ? 0 : furthest))
     setOpen(false)
     setMinimized(false)
+    setSelectedTour(null)
+    setStepIndex(0)
+    setFurthestStep(0)
     setVoiceSheetOpen(false)
     stopNarration()
     navigateRef.current(null)
   }, [stopNarration])
 
-  const skipMoment = useCallback(() => {
-    if (momentIndex === null) return
-    const nextMoment = firstStepOfMoment(momentIndex + 1)
-    goTo(nextMoment === -1 ? LAST_STEP : nextMoment)
-  }, [momentIndex, goTo])
+  const skipGroup = useCallback(() => {
+    if (isVoices && momentIndex !== null) {
+      const next = firstStepOfMoment(momentIndex + 1)
+      goTo(next === -1 ? lastStepFor('voices') : next)
+    } else if (isMiracles && sectionIndex !== null) {
+      const next = firstStepOfSection(sectionIndex + 1)
+      goTo(next === -1 ? lastStepFor('miracles') : next)
+    }
+  }, [isVoices, isMiracles, momentIndex, sectionIndex, goTo])
 
   // Drive the reader behind the panel.
   useEffect(() => {
     if (!open) return
-    const passage = passageOfStep(TOUR_STEPS[stepIndex])
+    const passage =
+      isVoices && voicesStep
+        ? passageOfStep(voicesStep)
+        : isMiracles && miracleStep
+          ? passageOfMiracleStep(miracleStep)
+          : null
     navigateRef.current(passage ? targetOf(passage) : null)
-  }, [open, stepIndex])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, stepIndex, selectedTour])
 
   /**
    * Publish the space the panel occupies so the page can keep the passage out
@@ -243,7 +377,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
       window.removeEventListener('orientationchange', update)
       clear()
     }
-  }, [open, minimized, stepIndex, voiceSheetOpen])
+  }, [open, minimized, stepIndex, voiceSheetOpen, selectedTour])
 
   /**
    * Speech mode: when it is on, each step is read as you arrive at it, and
@@ -252,10 +386,15 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
    * a moment to open the chapter.
    */
   useEffect(() => {
-    if (!open || !speechOn) return
+    if (!open || !speechOn || selectedTour === null) return
 
     const timer = window.setTimeout(() => {
-      const segments = narrationForStep(TOUR_STEPS[stepIndex])
+      const segments =
+        isVoices && voicesStep
+          ? narrationForStep(voicesStep)
+          : isMiracles && miracleStep
+            ? narrationForMiracleStep(miracleStep)
+            : []
 
       if (includePassage) {
         const verses = Array.from(
@@ -273,14 +412,15 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
     }, NARRATION_DELAY)
 
     return () => window.clearTimeout(timer)
-  }, [open, speechOn, includePassage, speechRate, voiceURI, stepIndex])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, speechOn, includePassage, speechRate, voiceURI, stepIndex, selectedTour])
 
   // Move focus to the new step's heading so screen readers follow along.
   useEffect(() => {
     if (!open || minimized) return
     headingRef.current?.focus()
     bodyRef.current?.scrollTo({ top: 0 })
-  }, [open, minimized, stepIndex])
+  }, [open, minimized, stepIndex, selectedTour])
 
   // Keyboard: arrows to move, Escape to leave.
   useEffect(() => {
@@ -293,36 +433,108 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
       if (e.key === 'Escape') {
         e.preventDefault()
         exit()
-      } else if (e.key === 'ArrowRight' && stepIndex < LAST_STEP) {
+      } else if (e.key === 'ArrowRight' && selectedTour !== null && stepIndex < lastStep) {
         e.preventDefault()
         goTo(stepIndex + 1)
-      } else if (e.key === 'ArrowLeft' && stepIndex > 0) {
+      } else if (e.key === 'ArrowLeft' && selectedTour !== null) {
         e.preventDefault()
-        goTo(stepIndex - 1)
+        if (stepIndex === 0) backToSelector()
+        else goTo(stepIndex - 1)
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [open, stepIndex, goTo, exit])
+  }, [open, stepIndex, selectedTour, lastStep, goTo, exit, backToSelector])
 
-  const progress = (stepIndex / LAST_STEP) * 100
+  const progress = lastStep > 0 ? (stepIndex / lastStep) * 100 : 0
 
   const stepLabel = useMemo(() => {
-    switch (step.kind) {
-      case 'welcome':
-        return 'Welcome'
-      case 'moment-intro':
-        return MOMENTS[step.momentIndex].title
-      case 'voice':
-        return `${MOMENTS[step.momentIndex].voices[step.voiceIndex].name} · ${
-          MOMENTS[step.momentIndex].title
-        }`
-      case 'synthesis':
-        return `${MOMENTS[step.momentIndex].title} · together`
-      case 'outro':
-        return 'Closing'
+    if (selectedTour === null) return 'Choose a tour'
+    if (isVoices && voicesStep) {
+      switch (voicesStep.kind) {
+        case 'welcome':
+          return 'Welcome'
+        case 'moment-intro':
+          return MOMENTS[voicesStep.momentIndex].title
+        case 'voice':
+          return `${MOMENTS[voicesStep.momentIndex].voices[voicesStep.voiceIndex].name} · ${
+            MOMENTS[voicesStep.momentIndex].title
+          }`
+        case 'synthesis':
+          return `${MOMENTS[voicesStep.momentIndex].title} · together`
+        case 'outro':
+          return 'Closing'
+      }
     }
-  }, [step])
+    if (isMiracles && miracleStep) {
+      switch (miracleStep.kind) {
+        case 'welcome':
+          return 'Welcome'
+        case 'section-intro':
+          return TESTAMENT_SECTIONS[miracleStep.sectionIndex].title
+        case 'miracle':
+          return TESTAMENT_SECTIONS[miracleStep.sectionIndex].miracles[
+            miracleStep.miracleIndex
+          ].title
+        case 'section-synthesis':
+          return `${TESTAMENT_SECTIONS[miracleStep.sectionIndex].title} · together`
+        case 'outro':
+          return 'Closing'
+      }
+    }
+    return ''
+  }, [selectedTour, isVoices, isMiracles, voicesStep, miracleStep])
+
+  const groupPills: GroupPill[] = isVoices
+    ? MOMENTS.map((m, i) => {
+        const first = firstStepOfMoment(i)
+        return {
+          key: m.id,
+          label: m.title.replace('The ', ''),
+          Icon: MOMENT_ICONS[m.id],
+          firstStep: first,
+          reached: furthestStep >= first,
+          active: momentIndex === i,
+          done:
+            furthestStep > first + m.voices.length + 1 ||
+            (momentIndex !== null && momentIndex > i) ||
+            voicesStep?.kind === 'outro',
+        }
+      })
+    : isMiracles
+      ? TESTAMENT_SECTIONS.map((s, i) => {
+          const first = firstStepOfSection(i)
+          return {
+            key: s.id,
+            label: s.title.replace(' Wonders', ''),
+            Icon: TESTAMENT_ICONS[s.id],
+            firstStep: first,
+            reached: furthestStep >= first,
+            active: sectionIndex === i,
+            done:
+              furthestStep > first + s.miracles.length + 1 ||
+              (sectionIndex !== null && sectionIndex > i) ||
+              miracleStep?.kind === 'outro',
+          }
+        })
+      : []
+
+  const itemDots: ItemDot[] =
+    isVoices && moment && momentIndex !== null
+      ? moment.voices.map((v, i) => ({
+          key: v.id,
+          label: `Go to ${v.name}'s account`,
+          target: firstStepOfMoment(momentIndex) + 1 + i,
+          accentDot: VOICE_ACCENTS[v.id].dot,
+        }))
+      : isMiracles && section && sectionIndex !== null
+        ? section.miracles.map((m, i) => ({
+            key: m.id,
+            label: `Go to ${m.title}`,
+            target: firstStepOfSection(sectionIndex) + 1 + i,
+            accentDot: TESTAMENT_ACCENTS[section.id].dot,
+          }))
+        : []
 
   if (!mounted) return null
 
@@ -336,7 +548,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
           onClick={start}
           data-read-aloud-ignore
           className="tour-fab group pointer-events-auto flex min-h-14 items-center gap-2.5 rounded-full px-4 py-3 shadow-lg transition-all hover:scale-[1.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 sm:px-5"
-          aria-label="Start the guided tour: one story, five voices"
+          aria-label="Start a guided tour"
         >
           {!seen && (
             <span
@@ -404,13 +616,16 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
 
   /* --- panel ------------------------------------------------------------ */
 
+  const activeTitle =
+    TOUR_CATALOG.find((t) => t.id === selectedTour)?.title ?? 'choose an experience'
+
   return createPortal(
     <div className="tour-anchor" style={{ zIndex: 55 }}>
       <section
         ref={panelRef}
         role="dialog"
         aria-modal="false"
-        aria-label="Guided tour: one story, five voices"
+        aria-label={`Guided tour: ${activeTitle}`}
         data-read-aloud-ignore
         data-voice-sheet={voiceSheetOpen ? 'true' : undefined}
         className="tour-panel-shell tour-panel pointer-events-auto flex flex-col overflow-hidden rounded-2xl shadow-2xl"
@@ -423,11 +638,13 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 Guided tour
               </p>
               <p className="truncate font-sans text-xs text-beige-500 dark:text-brown-500">
-                Step {stepIndex + 1} of {TOUR_STEPS.length} · {stepLabel}
+                {selectedTour === null
+                  ? 'Pick a tour to begin'
+                  : `Step ${stepIndex + 1} of ${lastStep + 1} · ${stepLabel}`}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              {narration.supported && (
+              {selectedTour !== null && narration.supported && (
                 <div className="tour-speech-control flex items-center">
                   <button
                     type="button"
@@ -470,14 +687,16 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 </div>
               )}
 
-              <button
-                type="button"
-                onClick={() => setMinimized(true)}
-                className="tour-icon-btn"
-                aria-label="Minimize the tour and read the passage"
-              >
-                <Minimize2 className="h-4 w-4" aria-hidden />
-              </button>
+              {selectedTour !== null && (
+                <button
+                  type="button"
+                  onClick={() => setMinimized(true)}
+                  className="tour-icon-btn"
+                  aria-label="Minimize the tour and read the passage"
+                >
+                  <Minimize2 className="h-4 w-4" aria-hidden />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={exit}
@@ -489,59 +708,54 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
             </div>
           </div>
 
-          {/* moment pills */}
-          <div className="mt-2.5 flex items-center gap-1.5">
-            {MOMENTS.map((m, i) => {
-              const Icon = MOMENT_ICONS[m.id]
-              const reached = furthestStep >= firstStepOfMoment(i)
-              const active = momentIndex === i
-              const done =
-                furthestStep > firstStepOfMoment(i) + m.voices.length + 1 ||
-                (momentIndex !== null && momentIndex > i) ||
-                step.kind === 'outro'
-              return (
+          {/* group pills */}
+          {selectedTour !== null && groupPills.length > 0 && (
+            <div className="mt-2.5 flex items-center gap-1.5">
+              {groupPills.map((g) => (
                 <button
-                  key={m.id}
+                  key={g.key}
                   type="button"
-                  disabled={!reached}
-                  onClick={() => goTo(firstStepOfMoment(i))}
+                  disabled={!g.reached}
+                  onClick={() => goTo(g.firstStep)}
                   className={`flex flex-1 items-center justify-center gap-1 rounded-lg px-1.5 py-1.5 font-sans text-[11px] font-medium transition-colors ${
-                    active
+                    g.active
                       ? 'bg-beige-800 text-beige-50 dark:bg-brown-200 dark:text-brown-950'
-                      : reached
+                      : g.reached
                         ? 'bg-beige-200/70 text-beige-800 hover:bg-beige-300/70 dark:bg-brown-800/70 dark:text-brown-100 dark:hover:bg-brown-700/70'
                         : 'bg-beige-100/50 text-beige-400 dark:bg-brown-900/40 dark:text-brown-600'
                   }`}
-                  aria-current={active ? 'step' : undefined}
+                  aria-current={g.active ? 'step' : undefined}
                   aria-label={
-                    reached ? `Go to ${m.title}` : `${m.title} — not reached yet`
+                    g.reached ? `Go to ${g.label}` : `${g.label} — not reached yet`
                   }
                 >
-                  {done && !active ? (
+                  {g.done && !g.active ? (
                     <Check className="h-3 w-3 shrink-0" aria-hidden />
                   ) : (
-                    <Icon className="h-3 w-3 shrink-0" aria-hidden />
+                    <g.Icon className="h-3 w-3 shrink-0" aria-hidden />
                   )}
-                  <span className="truncate">{m.title.replace('The ', '')}</span>
+                  <span className="truncate">{g.label}</span>
                 </button>
-              )
-            })}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* progress */}
-          <div
-            className="mt-2 h-1 overflow-hidden rounded-full bg-beige-200 dark:bg-brown-800"
-            role="progressbar"
-            aria-valuenow={Math.round(progress)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label="Tour progress"
-          >
+          {selectedTour !== null && (
             <div
-              className="tour-progress-bar h-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+              className="mt-2 h-1 overflow-hidden rounded-full bg-beige-200 dark:bg-brown-800"
+              role="progressbar"
+              aria-valuenow={Math.round(progress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Tour progress"
+            >
+              <div
+                className="tour-progress-bar h-full transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          )}
         </div>
 
         {/* body — a flex column so the scroll area keeps a definite height and
@@ -635,9 +849,15 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                   <div className="flex items-center gap-2 border-t border-beige-200 pt-3 dark:border-brown-700">
                     <button
                       type="button"
-                      onClick={() =>
-                        speakRef.current(narrationForStep(TOUR_STEPS[stepIndex]))
-                      }
+                      onClick={() => {
+                        const segments =
+                          isVoices && voicesStep
+                            ? narrationForStep(voicesStep)
+                            : isMiracles && miracleStep
+                              ? narrationForMiracleStep(miracleStep)
+                              : []
+                        speakRef.current(segments)
+                      }}
                       className="flex min-h-10 items-center gap-1.5 rounded-xl px-3 font-sans text-xs btn-surface hover:shadow-md"
                     >
                       <RotateCcw className="h-3.5 w-3.5" aria-hidden />
@@ -661,190 +881,392 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
             ref={bodyRef}
             className="tour-panel-body min-h-0 flex-1 overflow-y-auto px-4 py-4"
           >
-          {/* --- welcome --- */}
-          {step.kind === 'welcome' && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-beige-700 dark:text-brown-300">
-                <Sparkles className="h-5 w-5" aria-hidden />
-                <span className="font-sans text-xs font-medium uppercase tracking-wide">
-                  {TOUR_INTRO.duration}
-                </span>
-              </div>
-              <h2
-                ref={headingRef}
-                tabIndex={-1}
-                className="font-display text-2xl font-bold text-beige-900 outline-none dark:text-brown-50"
-              >
-                {TOUR_INTRO.title}
-              </h2>
-              <p className="font-sans text-sm text-beige-600 dark:text-brown-400">
-                {TOUR_INTRO.subtitle}
-              </p>
-              {TOUR_INTRO.body.map((p, i) => (
-                <p
-                  key={i}
-                  className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200"
+            {/* ===================================================================
+                Tour selector — shown until a tour is chosen
+                =================================================================== */}
+            {selectedTour === null && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-beige-700 dark:text-brown-300">
+                  <Compass className="h-5 w-5" aria-hidden />
+                  <span className="font-sans text-xs font-medium uppercase tracking-wide">
+                    Choose your walk
+                  </span>
+                </div>
+                <h2
+                  ref={headingRef}
+                  tabIndex={-1}
+                  className="font-display text-2xl font-bold text-beige-900 outline-none dark:text-brown-50"
                 >
-                  {p}
+                  Guided Tours
+                </h2>
+                <p className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200">
+                  Two ways to walk through this reader with a passage open beside
+                  you. Pick one to begin — you can always come back and try the
+                  other.
                 </p>
-              ))}
-              <div className="rounded-xl border border-beige-300/70 bg-beige-100/60 p-3 dark:border-brown-700/70 dark:bg-brown-900/40">
-                <p className="mb-2 flex items-center gap-1.5 font-sans text-xs font-semibold text-beige-700 dark:text-brown-300">
-                  <Users className="h-3.5 w-3.5" aria-hidden />
-                  The five voices
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {MOMENTS[0].voices.map((v) => (
-                    <span
-                      key={v.id}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-sans text-xs font-medium ${VOICE_ACCENTS[v.id].chip}`}
-                    >
-                      {v.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* --- moment intro --- */}
-          {step.kind === 'moment-intro' && moment && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-beige-200/80 text-beige-800 dark:bg-brown-800/80 dark:text-brown-100">
-                  {(() => {
-                    const Icon = MOMENT_ICONS[moment.id]
-                    return <Icon className="h-5 w-5" aria-hidden />
-                  })()}
-                </span>
-                <div>
-                  <h2
-                    ref={headingRef}
-                    tabIndex={-1}
-                    className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
-                  >
-                    {moment.title}
-                  </h2>
-                  <p className="font-sans text-xs text-beige-600 dark:text-brown-400">
-                    {moment.subtitle}
-                  </p>
-                </div>
-              </div>
-
-              <p className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200">
-                {moment.intro}
-              </p>
-
-              <ol className="space-y-1.5">
-                {moment.voices.map((v, i) => (
-                  <li key={v.id}>
-                    <button
-                      type="button"
-                      onClick={() => goTo(firstStepOfMoment(step.momentIndex) + 1 + i)}
-                      className="flex w-full items-center gap-2.5 rounded-lg border border-beige-300/60 bg-beige-50/60 px-2.5 py-2 text-left transition-colors hover:border-beige-400 hover:bg-beige-100 dark:border-brown-700/60 dark:bg-brown-900/40 dark:hover:border-brown-500 dark:hover:bg-brown-800/60"
-                    >
-                      <span
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-sans text-xs font-bold ring-1 ${VOICE_ACCENTS[v.id].badge}`}
+                <div className="space-y-3">
+                  {TOUR_CATALOG.map((t) => {
+                    const Icon = TOUR_CARD_ICONS[t.id]
+                    const badgeClass =
+                      t.id === 'miracles'
+                        ? 'bg-rose-100 text-rose-900 ring-2 ring-rose-500/40 dark:bg-rose-950/60 dark:text-rose-100 dark:ring-rose-400/40'
+                        : 'bg-beige-200/80 text-beige-800 ring-2 ring-beige-400/40 dark:bg-brown-800/80 dark:text-brown-100 dark:ring-brown-500/40'
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => selectTour(t.id)}
+                        className="group w-full rounded-2xl border border-beige-300/60 bg-beige-50/60 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-beige-400 hover:bg-beige-100 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-beige-400/50 dark:border-brown-700/60 dark:bg-brown-900/40 dark:hover:border-brown-500 dark:hover:bg-brown-800/60"
                       >
-                        {v.name.charAt(0)}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block font-sans text-xs font-semibold text-beige-900 dark:text-brown-50">
-                          {v.name}
-                        </span>
-                        <span className="block truncate font-sans text-[11px] text-beige-600 dark:text-brown-400">
-                          {v.passage.label}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-
-          {/* --- a single voice --- */}
-          {step.kind === 'voice' && voice && moment && (
-            <div className="space-y-3.5">
-              <div className="flex items-start gap-3">
-                <span
-                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-display text-lg font-bold ring-2 ${VOICE_ACCENTS[voice.id].badge}`}
-                  aria-hidden
-                >
-                  {voice.name.charAt(0)}
-                </span>
-                <div className="min-w-0">
-                  <h2
-                    ref={headingRef}
-                    tabIndex={-1}
-                    className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
-                  >
-                    {voice.name}
-                  </h2>
-                  <p className="font-sans text-xs leading-snug text-beige-600 dark:text-brown-400">
-                    {voice.role}
-                  </p>
+                        <div className="flex items-start gap-3">
+                          <span
+                            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${badgeClass}`}
+                            aria-hidden
+                          >
+                            <Icon className="h-5 w-5" aria-hidden />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-display text-lg font-bold text-beige-900 dark:text-brown-50">
+                              {t.title}
+                            </h3>
+                            <p className="font-sans text-xs text-beige-600 dark:text-brown-400">
+                              {t.subtitle}
+                            </p>
+                            <p className="mt-1.5 font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-200">
+                              {t.description}
+                            </p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {[...t.facts, t.duration].map((f) => (
+                                <span
+                                  key={f}
+                                  className="inline-flex items-center rounded-full bg-beige-200/70 px-2 py-0.5 font-sans text-[10px] font-medium text-beige-700 dark:bg-brown-800/70 dark:text-brown-300"
+                                >
+                                  {f}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <ArrowRight
+                            className="mt-1 h-4 w-4 shrink-0 text-beige-400 transition-transform group-hover:translate-x-0.5 dark:text-brown-500"
+                            aria-hidden
+                          />
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
+            )}
 
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-sans text-[11px] font-medium ${VOICE_ACCENTS[voice.id].chip}`}
+            {/* ===================================================================
+                "One Story, Five Voices" — unchanged from the original tour
+                =================================================================== */}
+
+            {isVoices && voicesStep?.kind === 'welcome' && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-beige-700 dark:text-brown-300">
+                  <Sparkles className="h-5 w-5" aria-hidden />
+                  <span className="font-sans text-xs font-medium uppercase tracking-wide">
+                    {TOUR_INTRO.duration}
+                  </span>
+                </div>
+                <h2
+                  ref={headingRef}
+                  tabIndex={-1}
+                  className="font-display text-2xl font-bold text-beige-900 outline-none dark:text-brown-50"
                 >
-                  <BookOpen className="h-3 w-3" aria-hidden />
-                  {voice.passage.label}
-                </span>
-                <span className="inline-flex items-center rounded-full bg-beige-200/70 px-2.5 py-1 font-sans text-[11px] text-beige-700 dark:bg-brown-800/70 dark:text-brown-300">
-                  written {voice.written}
-                </span>
-              </div>
-
-              <blockquote
-                className={`border-l-4 pl-3 ${VOICE_ACCENTS[voice.id].rule}`}
-              >
-                <Quote
-                  className="mb-1 h-3.5 w-3.5 text-beige-400 dark:text-brown-500"
-                  aria-hidden
-                />
-                <p className="font-serif text-[15px] italic leading-relaxed text-beige-900 dark:text-brown-100">
-                  {voice.quote}
+                  {TOUR_INTRO.title}
+                </h2>
+                <p className="font-sans text-sm text-beige-600 dark:text-brown-400">
+                  {TOUR_INTRO.subtitle}
                 </p>
-                <cite className="mt-1.5 block font-sans text-[11px] not-italic text-beige-600 dark:text-brown-400">
-                  {voice.quoteRef}
-                </cite>
-              </blockquote>
-
-              <div>
-                <p className="mb-1.5 font-sans text-xs font-semibold uppercase tracking-wide text-beige-700 dark:text-brown-300">
-                  What only {voice.name} gives you
-                </p>
-                <ul className="space-y-1.5">
-                  {voice.distinctives.map((d, i) => (
-                    <li
-                      key={i}
-                      className="flex gap-2 font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-200"
-                    >
-                      <span
-                        className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${VOICE_ACCENTS[voice.id].dot}`}
-                        aria-hidden
-                      />
-                      <span>{d}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <p className="rounded-xl bg-beige-100/70 p-3 font-serif text-[13px] leading-relaxed text-beige-800 dark:bg-brown-900/50 dark:text-brown-200">
-                {voice.lens}
-              </p>
-
-              {voice.alsoSee && voice.alsoSee.length > 0 && (
-                <div>
-                  <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
-                    Also read
+                {TOUR_INTRO.body.map((p, i) => (
+                  <p
+                    key={i}
+                    className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200"
+                  >
+                    {p}
+                  </p>
+                ))}
+                <div className="rounded-xl border border-beige-300/70 bg-beige-100/60 p-3 dark:border-brown-700/70 dark:bg-brown-900/40">
+                  <p className="mb-2 flex items-center gap-1.5 font-sans text-xs font-semibold text-beige-700 dark:text-brown-300">
+                    <Users className="h-3.5 w-3.5" aria-hidden />
+                    The five voices
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {voice.alsoSee.map((p) => (
+                    {MOMENTS[0].voices.map((v) => (
+                      <span
+                        key={v.id}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-sans text-xs font-medium ${VOICE_ACCENTS[v.id].chip}`}
+                      >
+                        {v.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isVoices && voicesStep?.kind === 'moment-intro' && moment && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-beige-200/80 text-beige-800 dark:bg-brown-800/80 dark:text-brown-100">
+                    {(() => {
+                      const Icon = MOMENT_ICONS[moment.id]
+                      return <Icon className="h-5 w-5" aria-hidden />
+                    })()}
+                  </span>
+                  <div>
+                    <h2
+                      ref={headingRef}
+                      tabIndex={-1}
+                      className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                    >
+                      {moment.title}
+                    </h2>
+                    <p className="font-sans text-xs text-beige-600 dark:text-brown-400">
+                      {moment.subtitle}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200">
+                  {moment.intro}
+                </p>
+
+                <ol className="space-y-1.5">
+                  {moment.voices.map((v, i) => (
+                    <li key={v.id}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          goTo(firstStepOfMoment(voicesStep.momentIndex) + 1 + i)
+                        }
+                        className="flex w-full items-center gap-2.5 rounded-lg border border-beige-300/60 bg-beige-50/60 px-2.5 py-2 text-left transition-colors hover:border-beige-400 hover:bg-beige-100 dark:border-brown-700/60 dark:bg-brown-900/40 dark:hover:border-brown-500 dark:hover:bg-brown-800/60"
+                      >
+                        <span
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-sans text-xs font-bold ring-1 ${VOICE_ACCENTS[v.id].badge}`}
+                        >
+                          {v.name.charAt(0)}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block font-sans text-xs font-semibold text-beige-900 dark:text-brown-50">
+                            {v.name}
+                          </span>
+                          <span className="block truncate font-sans text-[11px] text-beige-600 dark:text-brown-400">
+                            {v.passage.label}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {isVoices && voicesStep?.kind === 'voice' && voice && moment && (
+              <div className="space-y-3.5">
+                <div className="flex items-start gap-3">
+                  <span
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-display text-lg font-bold ring-2 ${VOICE_ACCENTS[voice.id].badge}`}
+                    aria-hidden
+                  >
+                    {voice.name.charAt(0)}
+                  </span>
+                  <div className="min-w-0">
+                    <h2
+                      ref={headingRef}
+                      tabIndex={-1}
+                      className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                    >
+                      {voice.name}
+                    </h2>
+                    <p className="font-sans text-xs leading-snug text-beige-600 dark:text-brown-400">
+                      {voice.role}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-sans text-[11px] font-medium ${VOICE_ACCENTS[voice.id].chip}`}
+                  >
+                    <BookOpen className="h-3 w-3" aria-hidden />
+                    {voice.passage.label}
+                  </span>
+                  <span className="inline-flex items-center rounded-full bg-beige-200/70 px-2.5 py-1 font-sans text-[11px] text-beige-700 dark:bg-brown-800/70 dark:text-brown-300">
+                    written {voice.written}
+                  </span>
+                </div>
+
+                <blockquote
+                  className={`border-l-4 pl-3 ${VOICE_ACCENTS[voice.id].rule}`}
+                >
+                  <Quote
+                    className="mb-1 h-3.5 w-3.5 text-beige-400 dark:text-brown-500"
+                    aria-hidden
+                  />
+                  <p className="font-serif text-[15px] italic leading-relaxed text-beige-900 dark:text-brown-100">
+                    {voice.quote}
+                  </p>
+                  <cite className="mt-1.5 block font-sans text-[11px] not-italic text-beige-600 dark:text-brown-400">
+                    {voice.quoteRef}
+                  </cite>
+                </blockquote>
+
+                <div>
+                  <p className="mb-1.5 font-sans text-xs font-semibold uppercase tracking-wide text-beige-700 dark:text-brown-300">
+                    What only {voice.name} gives you
+                  </p>
+                  <ul className="space-y-1.5">
+                    {voice.distinctives.map((d, i) => (
+                      <li
+                        key={i}
+                        className="flex gap-2 font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-200"
+                      >
+                        <span
+                          className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${VOICE_ACCENTS[voice.id].dot}`}
+                          aria-hidden
+                        />
+                        <span>{d}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <p className="rounded-xl bg-beige-100/70 p-3 font-serif text-[13px] leading-relaxed text-beige-800 dark:bg-brown-900/50 dark:text-brown-200">
+                  {voice.lens}
+                </p>
+
+                {voice.alsoSee && voice.alsoSee.length > 0 && (
+                  <div>
+                    <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
+                      Also read
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {voice.alsoSee.map((p) => (
+                        <button
+                          key={p.label}
+                          type="button"
+                          onClick={() => navigateRef.current(targetOf(p))}
+                          className="inline-flex items-center gap-1 rounded-full border border-beige-300 bg-beige-50/70 px-2.5 py-1 font-sans text-[11px] text-beige-800 transition-colors hover:border-beige-500 hover:bg-beige-100 dark:border-brown-700 dark:bg-brown-900/50 dark:text-brown-200 dark:hover:border-brown-500"
+                        >
+                          <BookOpen className="h-3 w-3" aria-hidden />
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isVoices && voicesStep?.kind === 'synthesis' && moment && (
+              <div className="space-y-3.5">
+                <div className="flex items-center gap-2">
+                  <Users
+                    className="h-5 w-5 text-beige-700 dark:text-brown-300"
+                    aria-hidden
+                  />
+                  <h2
+                    ref={headingRef}
+                    tabIndex={-1}
+                    className="font-display text-lg font-bold leading-tight text-beige-900 outline-none dark:text-brown-50"
+                  >
+                    {moment.synthesis.heading}
+                  </h2>
+                </div>
+
+                <div className="rounded-xl border border-emerald-600/25 bg-emerald-50/60 p-3 dark:border-emerald-400/20 dark:bg-emerald-950/25">
+                  <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200">
+                    All five hold this in common
+                  </p>
+                  <ul className="space-y-1">
+                    {moment.synthesis.shared.map((s, i) => (
+                      <li
+                        key={i}
+                        className="flex gap-2 font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-100"
+                      >
+                        <Check
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-700 dark:text-emerald-400"
+                          aria-hidden
+                        />
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <p className="mb-1 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
+                    Where they part ways
+                  </p>
+                  <p className="font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-200">
+                    {moment.synthesis.differences}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="mb-1 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
+                    And why that matters
+                  </p>
+                  <p className="font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-200">
+                    {moment.synthesis.reflection}
+                  </p>
+                </div>
+
+                <blockquote className="rounded-xl bg-beige-100/70 p-3 dark:bg-brown-900/50">
+                  <p className="font-serif text-[14px] italic leading-relaxed text-beige-900 dark:text-brown-100">
+                    {moment.synthesis.quote}
+                  </p>
+                  <cite className="mt-1.5 block font-sans text-[11px] not-italic text-beige-600 dark:text-brown-400">
+                    {moment.synthesis.passage.label} — highlighted in the reader
+                  </cite>
+                </blockquote>
+              </div>
+            )}
+
+            {isVoices && voicesStep?.kind === 'outro' && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles
+                    className="h-5 w-5 text-beige-700 dark:text-brown-300"
+                    aria-hidden
+                  />
+                  <h2
+                    ref={headingRef}
+                    tabIndex={-1}
+                    className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                  >
+                    {TOUR_OUTRO.title}
+                  </h2>
+                </div>
+
+                {TOUR_OUTRO.body.map((p, i) => (
+                  <p
+                    key={i}
+                    className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200"
+                  >
+                    {p}
+                  </p>
+                ))}
+
+                <blockquote className="rounded-xl bg-beige-100/70 p-3 dark:bg-brown-900/50">
+                  <p className="font-serif text-[15px] italic leading-relaxed text-beige-900 dark:text-brown-100">
+                    {TOUR_OUTRO.quote}
+                  </p>
+                  <cite className="mt-1.5 block font-sans text-[11px] not-italic text-beige-600 dark:text-brown-400">
+                    {TOUR_OUTRO.passage.label}
+                  </cite>
+                </blockquote>
+
+                <div>
+                  <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
+                    Carry on reading
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {TOUR_OUTRO.furtherReading.map((p) => (
                       <button
                         key={p.label}
                         type="button"
@@ -857,220 +1279,457 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                     ))}
                   </div>
                 </div>
-              )}
-            </div>
-          )}
 
-          {/* --- synthesis --- */}
-          {step.kind === 'synthesis' && moment && (
-            <div className="space-y-3.5">
-              <div className="flex items-center gap-2">
-                <Users
-                  className="h-5 w-5 text-beige-700 dark:text-brown-300"
-                  aria-hidden
-                />
-                <h2
-                  ref={headingRef}
-                  tabIndex={-1}
-                  className="font-display text-lg font-bold leading-tight text-beige-900 outline-none dark:text-brown-50"
-                >
-                  {moment.synthesis.heading}
-                </h2>
-              </div>
-
-              <div className="rounded-xl border border-emerald-600/25 bg-emerald-50/60 p-3 dark:border-emerald-400/20 dark:bg-emerald-950/25">
-                <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200">
-                  All five hold this in common
-                </p>
-                <ul className="space-y-1">
-                  {moment.synthesis.shared.map((s, i) => (
-                    <li
-                      key={i}
-                      className="flex gap-2 font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-100"
-                    >
-                      <Check
-                        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-700 dark:text-emerald-400"
-                        aria-hidden
-                      />
-                      <span>{s}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <p className="mb-1 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
-                  Where they part ways
-                </p>
-                <p className="font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-200">
-                  {moment.synthesis.differences}
-                </p>
-              </div>
-
-              <div>
-                <p className="mb-1 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
-                  And why that matters
-                </p>
-                <p className="font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-200">
-                  {moment.synthesis.reflection}
-                </p>
-              </div>
-
-              <blockquote className="rounded-xl bg-beige-100/70 p-3 dark:bg-brown-900/50">
-                <p className="font-serif text-[14px] italic leading-relaxed text-beige-900 dark:text-brown-100">
-                  {moment.synthesis.quote}
-                </p>
-                <cite className="mt-1.5 block font-sans text-[11px] not-italic text-beige-600 dark:text-brown-400">
-                  {moment.synthesis.passage.label} — highlighted in the reader
-                </cite>
-              </blockquote>
-            </div>
-          )}
-
-          {/* --- outro --- */}
-          {step.kind === 'outro' && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Sparkles
-                  className="h-5 w-5 text-beige-700 dark:text-brown-300"
-                  aria-hidden
-                />
-                <h2
-                  ref={headingRef}
-                  tabIndex={-1}
-                  className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
-                >
-                  {TOUR_OUTRO.title}
-                </h2>
-              </div>
-
-              {TOUR_OUTRO.body.map((p, i) => (
-                <p
-                  key={i}
-                  className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200"
-                >
-                  {p}
-                </p>
-              ))}
-
-              <blockquote className="rounded-xl bg-beige-100/70 p-3 dark:bg-brown-900/50">
-                <p className="font-serif text-[15px] italic leading-relaxed text-beige-900 dark:text-brown-100">
-                  {TOUR_OUTRO.quote}
-                </p>
-                <cite className="mt-1.5 block font-sans text-[11px] not-italic text-beige-600 dark:text-brown-400">
-                  {TOUR_OUTRO.passage.label}
-                </cite>
-              </blockquote>
-
-              <div>
-                <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
-                  Carry on reading
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {TOUR_OUTRO.furtherReading.map((p) => (
-                    <button
-                      key={p.label}
-                      type="button"
-                      onClick={() => navigateRef.current(targetOf(p))}
-                      className="inline-flex items-center gap-1 rounded-full border border-beige-300 bg-beige-50/70 px-2.5 py-1 font-sans text-[11px] text-beige-800 transition-colors hover:border-beige-500 hover:bg-beige-100 dark:border-brown-700 dark:bg-brown-900/50 dark:text-brown-200 dark:hover:border-brown-500"
-                    >
-                      <BookOpen className="h-3 w-3" aria-hidden />
-                      {p.label}
-                    </button>
-                  ))}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <button
+                    type="button"
+                    onClick={restart}
+                    className="font-sans text-xs text-beige-600 underline underline-offset-2 transition-colors hover:text-beige-900 dark:text-brown-400 dark:hover:text-brown-100"
+                  >
+                    Walk through it again
+                  </button>
+                  <button
+                    type="button"
+                    onClick={backToSelector}
+                    className="font-sans text-xs text-beige-600 underline underline-offset-2 transition-colors hover:text-beige-900 dark:text-brown-400 dark:hover:text-brown-100"
+                  >
+                    Try the other tour
+                  </button>
                 </div>
               </div>
+            )}
 
-              <button
-                type="button"
-                onClick={restart}
-                className="font-sans text-xs text-beige-600 underline underline-offset-2 transition-colors hover:text-beige-900 dark:text-brown-400 dark:hover:text-brown-100"
-              >
-                Walk through it again
-              </button>
-            </div>
-          )}
-          </div>
-        </div>
+            {/* ===================================================================
+                "Wonders and Hope" — the miracles tour
+                =================================================================== */}
 
-        {/* footer */}
-        <div className="shrink-0 border-t border-beige-300/70 px-4 py-3 dark:border-brown-700/70">
-          {/* voice stepper */}
-          {moment && (
-            <div className="mb-2.5 flex items-center justify-center gap-1.5">
-              {moment.voices.map((v, i) => {
-                const target = firstStepOfMoment(MOMENTS.indexOf(moment)) + 1 + i
-                const active = stepIndex === target
-                return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    onClick={() => goTo(target)}
-                    className={`h-2 rounded-full transition-all ${
-                      active
-                        ? `w-6 ${VOICE_ACCENTS[v.id].dot}`
-                        : 'w-2 bg-beige-300 hover:bg-beige-400 dark:bg-brown-700 dark:hover:bg-brown-600'
-                    }`}
-                    aria-label={`Go to ${v.name}'s account`}
-                    aria-current={active ? 'step' : undefined}
+            {isMiracles && miracleStep?.kind === 'welcome' && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-beige-700 dark:text-brown-300">
+                  <Sparkles className="h-5 w-5" aria-hidden />
+                  <span className="font-sans text-xs font-medium uppercase tracking-wide">
+                    {MIRACLE_INTRO.duration}
+                  </span>
+                </div>
+                <h2
+                  ref={headingRef}
+                  tabIndex={-1}
+                  className="font-display text-2xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                >
+                  {MIRACLE_INTRO.title}
+                </h2>
+                <p className="font-sans text-sm text-beige-600 dark:text-brown-400">
+                  {MIRACLE_INTRO.subtitle}
+                </p>
+                {MIRACLE_INTRO.body.map((p, i) => (
+                  <p
+                    key={i}
+                    className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200"
+                  >
+                    {p}
+                  </p>
+                ))}
+                <div className="rounded-xl border border-beige-300/70 bg-beige-100/60 p-3 dark:border-brown-700/70 dark:bg-brown-900/40">
+                  <p className="mb-2 flex items-center gap-1.5 font-sans text-xs font-semibold text-beige-700 dark:text-brown-300">
+                    <LifeBuoy className="h-3.5 w-3.5" aria-hidden />
+                    Two testaments, fourteen wonders
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {TESTAMENT_SECTIONS.map((s) => (
+                      <span
+                        key={s.id}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-sans text-xs font-medium ${TESTAMENT_ACCENTS[s.id].chip}`}
+                      >
+                        {s.title.replace(' Wonders', '')} ({s.miracles.length})
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isMiracles && miracleStep?.kind === 'section-intro' && section && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-beige-200/80 text-beige-800 dark:bg-brown-800/80 dark:text-brown-100">
+                    {(() => {
+                      const Icon = TESTAMENT_ICONS[section.id]
+                      return <Icon className="h-5 w-5" aria-hidden />
+                    })()}
+                  </span>
+                  <div>
+                    <h2
+                      ref={headingRef}
+                      tabIndex={-1}
+                      className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                    >
+                      {section.title}
+                    </h2>
+                    <p className="font-sans text-xs text-beige-600 dark:text-brown-400">
+                      {section.subtitle}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200">
+                  {section.intro}
+                </p>
+
+                <ol className="space-y-1.5">
+                  {section.miracles.map((m, i) => (
+                    <li key={m.id}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          goTo(firstStepOfSection(miracleStep.sectionIndex) + 1 + i)
+                        }
+                        className="flex w-full items-center gap-2.5 rounded-lg border border-beige-300/60 bg-beige-50/60 px-2.5 py-2 text-left transition-colors hover:border-beige-400 hover:bg-beige-100 dark:border-brown-700/60 dark:bg-brown-900/40 dark:hover:border-brown-500 dark:hover:bg-brown-800/60"
+                      >
+                        <span
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-sans text-xs font-bold ring-1 ${TESTAMENT_ACCENTS[section.id].badge}`}
+                        >
+                          {i + 1}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block font-sans text-xs font-semibold text-beige-900 dark:text-brown-50">
+                            {m.title}
+                          </span>
+                          <span className="block truncate font-sans text-[11px] text-beige-600 dark:text-brown-400">
+                            {m.passage.label}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {isMiracles && miracleStep?.kind === 'miracle' && miracle && section && (
+              <div className="space-y-3.5">
+                <div className="flex items-start gap-3">
+                  <span
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ring-2 ${TESTAMENT_ACCENTS[section.id].badge}`}
+                    aria-hidden
+                  >
+                    {(() => {
+                      const Icon = MIRACLE_ICONS[miracle.id]
+                      return <Icon className="h-5 w-5" aria-hidden />
+                    })()}
+                  </span>
+                  <div className="min-w-0">
+                    <h2
+                      ref={headingRef}
+                      tabIndex={-1}
+                      className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                    >
+                      {miracle.title}
+                    </h2>
+                    <p className="flex items-center gap-1 font-sans text-xs leading-snug text-beige-600 dark:text-brown-400">
+                      <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+                      {miracle.location}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-sans text-[11px] font-medium ${TESTAMENT_ACCENTS[section.id].chip}`}
+                  >
+                    <BookOpen className="h-3 w-3" aria-hidden />
+                    {miracle.passage.label}
+                  </span>
+                </div>
+
+                <blockquote
+                  className={`border-l-4 pl-3 ${TESTAMENT_ACCENTS[section.id].rule}`}
+                >
+                  <Quote
+                    className="mb-1 h-3.5 w-3.5 text-beige-400 dark:text-brown-500"
+                    aria-hidden
                   />
-                )
-              })}
-            </div>
-          )}
+                  <p className="font-serif text-[15px] italic leading-relaxed text-beige-900 dark:text-brown-100">
+                    {miracle.quote}
+                  </p>
+                  <cite className="mt-1.5 block font-sans text-[11px] not-italic text-beige-600 dark:text-brown-400">
+                    {miracle.quoteRef}
+                  </cite>
+                </blockquote>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => goTo(stepIndex - 1)}
-              disabled={stepIndex === 0}
-              className={`flex min-h-10 items-center gap-1 rounded-xl px-3 font-sans text-xs font-medium transition-all ${
-                stepIndex === 0 ? 'btn-surface-muted' : 'btn-surface hover:shadow-md'
-              }`}
-            >
-              <ChevronLeft className="h-4 w-4" aria-hidden />
-              Back
-            </button>
+                <div>
+                  <p className="mb-1.5 font-sans text-xs font-semibold uppercase tracking-wide text-beige-700 dark:text-brown-300">
+                    Notice
+                  </p>
+                  <ul className="space-y-1.5">
+                    {miracle.details.map((d, i) => (
+                      <li
+                        key={i}
+                        className="flex gap-2 font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-200"
+                      >
+                        <span
+                          className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${TESTAMENT_ACCENTS[section.id].dot}`}
+                          aria-hidden
+                        />
+                        <span>{d}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
-            <div className="flex-1" />
+                <p className="rounded-xl bg-beige-100/70 p-3 font-serif text-[13px] leading-relaxed text-beige-800 dark:bg-brown-900/50 dark:text-brown-200">
+                  {miracle.whatHappened}
+                </p>
 
-            {momentIndex !== null && (
-              <button
-                type="button"
-                onClick={skipMoment}
-                className="flex min-h-10 items-center gap-1 rounded-xl px-2.5 font-sans text-xs text-beige-600 transition-colors hover:text-beige-900 dark:text-brown-400 dark:hover:text-brown-100"
-                aria-label={`Skip the rest of ${moment?.title}`}
-              >
-                <SkipForward className="h-3.5 w-3.5" aria-hidden />
-                Skip
-              </button>
+                <p className="rounded-xl bg-beige-100/70 p-3 font-serif text-[13px] leading-relaxed text-beige-800 dark:bg-brown-900/50 dark:text-brown-200">
+                  {miracle.hopeMeaning}
+                </p>
+
+                {miracle.alsoSee && miracle.alsoSee.length > 0 && (
+                  <div>
+                    <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
+                      Also read
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {miracle.alsoSee.map((p) => (
+                        <button
+                          key={p.label}
+                          type="button"
+                          onClick={() => navigateRef.current(targetOf(p))}
+                          className="inline-flex items-center gap-1 rounded-full border border-beige-300 bg-beige-50/70 px-2.5 py-1 font-sans text-[11px] text-beige-800 transition-colors hover:border-beige-500 hover:bg-beige-100 dark:border-brown-700 dark:bg-brown-900/50 dark:text-brown-200 dark:hover:border-brown-500"
+                        >
+                          <BookOpen className="h-3 w-3" aria-hidden />
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="rounded-xl border border-rose-500/25 bg-rose-50/50 p-3 dark:border-rose-400/20 dark:bg-rose-950/20">
+                  <p className="mb-1 flex items-center gap-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-rose-800 dark:text-rose-200">
+                    <MessageCircleQuestionMark className="h-3.5 w-3.5" aria-hidden />
+                    Something to consider
+                  </p>
+                  <p className="font-serif text-[13px] italic leading-relaxed text-beige-900 dark:text-brown-100">
+                    {miracle.reflectionQuestion}
+                  </p>
+                </div>
+              </div>
             )}
 
-            {stepIndex < LAST_STEP ? (
-              <button
-                type="button"
-                onClick={() => goTo(stepIndex + 1)}
-                className="tour-next-btn flex min-h-10 items-center gap-1 rounded-xl px-4 font-sans text-xs font-semibold shadow-md transition-all hover:shadow-lg"
-              >
-                {step.kind === 'welcome' ? 'Begin' : 'Next'}
-                <ChevronRight className="h-4 w-4" aria-hidden />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={exit}
-                className="tour-next-btn flex min-h-10 items-center gap-1 rounded-xl px-4 font-sans text-xs font-semibold shadow-md transition-all hover:shadow-lg"
-              >
-                Finish
-                <ArrowRight className="h-4 w-4" aria-hidden />
-              </button>
+            {isMiracles &&
+              miracleStep?.kind === 'section-synthesis' &&
+              section && (
+                <div className="space-y-3.5">
+                  <div className="flex items-center gap-2">
+                    <Sparkles
+                      className="h-5 w-5 text-beige-700 dark:text-brown-300"
+                      aria-hidden
+                    />
+                    <h2
+                      ref={headingRef}
+                      tabIndex={-1}
+                      className="font-display text-lg font-bold leading-tight text-beige-900 outline-none dark:text-brown-50"
+                    >
+                      {section.synthesis.heading}
+                    </h2>
+                  </div>
+
+                  <div className="rounded-xl border border-emerald-600/25 bg-emerald-50/60 p-3 dark:border-emerald-400/20 dark:bg-emerald-950/25">
+                    <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200">
+                      The pattern
+                    </p>
+                    <ul className="space-y-1">
+                      {section.synthesis.patterns.map((s, i) => (
+                        <li
+                          key={i}
+                          className="flex gap-2 font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-100"
+                        >
+                          <Check
+                            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-700 dark:text-emerald-400"
+                            aria-hidden
+                          />
+                          <span>{s}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <p className="mb-1 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
+                      And why that matters
+                    </p>
+                    <p className="font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-200">
+                      {section.synthesis.reflection}
+                    </p>
+                  </div>
+
+                  <blockquote className="rounded-xl bg-beige-100/70 p-3 dark:bg-brown-900/50">
+                    <p className="font-serif text-[14px] italic leading-relaxed text-beige-900 dark:text-brown-100">
+                      {section.synthesis.quote}
+                    </p>
+                    <cite className="mt-1.5 block font-sans text-[11px] not-italic text-beige-600 dark:text-brown-400">
+                      {section.synthesis.passage.label} — highlighted in the
+                      reader
+                    </cite>
+                  </blockquote>
+                </div>
+              )}
+
+            {isMiracles && miracleStep?.kind === 'outro' && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles
+                    className="h-5 w-5 text-beige-700 dark:text-brown-300"
+                    aria-hidden
+                  />
+                  <h2
+                    ref={headingRef}
+                    tabIndex={-1}
+                    className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                  >
+                    {MIRACLE_OUTRO.title}
+                  </h2>
+                </div>
+
+                {MIRACLE_OUTRO.body.map((p, i) => (
+                  <p
+                    key={i}
+                    className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200"
+                  >
+                    {p}
+                  </p>
+                ))}
+
+                <blockquote className="rounded-xl bg-beige-100/70 p-3 dark:bg-brown-900/50">
+                  <p className="font-serif text-[15px] italic leading-relaxed text-beige-900 dark:text-brown-100">
+                    {MIRACLE_OUTRO.quote}
+                  </p>
+                  <cite className="mt-1.5 block font-sans text-[11px] not-italic text-beige-600 dark:text-brown-400">
+                    {MIRACLE_OUTRO.passage.label}
+                  </cite>
+                </blockquote>
+
+                <div>
+                  <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
+                    Carry on reading
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {MIRACLE_OUTRO.furtherReading.map((p) => (
+                      <button
+                        key={p.label}
+                        type="button"
+                        onClick={() => navigateRef.current(targetOf(p))}
+                        className="inline-flex items-center gap-1 rounded-full border border-beige-300 bg-beige-50/70 px-2.5 py-1 font-sans text-[11px] text-beige-800 transition-colors hover:border-beige-500 hover:bg-beige-100 dark:border-brown-700 dark:bg-brown-900/50 dark:text-brown-200 dark:hover:border-brown-500"
+                      >
+                        <BookOpen className="h-3 w-3" aria-hidden />
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <button
+                    type="button"
+                    onClick={restart}
+                    className="font-sans text-xs text-beige-600 underline underline-offset-2 transition-colors hover:text-beige-900 dark:text-brown-400 dark:hover:text-brown-100"
+                  >
+                    Walk through it again
+                  </button>
+                  <button
+                    type="button"
+                    onClick={backToSelector}
+                    className="font-sans text-xs text-beige-600 underline underline-offset-2 transition-colors hover:text-beige-900 dark:text-brown-400 dark:hover:text-brown-100"
+                  >
+                    Try the other tour
+                  </button>
+                </div>
+              </div>
             )}
           </div>
-
-          <p className="tour-hint mt-2 text-center font-sans text-[10px] text-beige-500 dark:text-brown-500">
-            ← → to move · Esc to leave · you can exit at any time
-          </p>
         </div>
+
+        {/* footer — only once a tour is chosen; the selector is card-driven */}
+        {selectedTour !== null && (
+          <div className="shrink-0 border-t border-beige-300/70 px-4 py-3 dark:border-brown-700/70">
+            {/* item stepper */}
+            {itemDots.length > 0 && (
+              <div className="mb-2.5 flex items-center justify-center gap-1.5">
+                {itemDots.map((d) => {
+                  const active = stepIndex === d.target
+                  return (
+                    <button
+                      key={d.key}
+                      type="button"
+                      onClick={() => goTo(d.target)}
+                      className={`h-2 rounded-full transition-all ${
+                        active
+                          ? `w-6 ${d.accentDot}`
+                          : 'w-2 bg-beige-300 hover:bg-beige-400 dark:bg-brown-700 dark:hover:bg-brown-600'
+                      }`}
+                      aria-label={d.label}
+                      aria-current={active ? 'step' : undefined}
+                    />
+                  )
+                })}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  stepIndex === 0 ? backToSelector() : goTo(stepIndex - 1)
+                }
+                className="flex min-h-10 items-center gap-1 rounded-xl px-3 font-sans text-xs font-medium btn-surface transition-all hover:shadow-md"
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden />
+                Back
+              </button>
+
+              <div className="flex-1" />
+
+              {(momentIndex !== null || sectionIndex !== null) && (
+                <button
+                  type="button"
+                  onClick={skipGroup}
+                  className="flex min-h-10 items-center gap-1 rounded-xl px-2.5 font-sans text-xs text-beige-600 transition-colors hover:text-beige-900 dark:text-brown-400 dark:hover:text-brown-100"
+                  aria-label={`Skip the rest of ${moment?.title ?? section?.title ?? ''}`}
+                >
+                  <SkipForward className="h-3.5 w-3.5" aria-hidden />
+                  Skip
+                </button>
+              )}
+
+              {stepIndex < lastStep ? (
+                <button
+                  type="button"
+                  onClick={() => goTo(stepIndex + 1)}
+                  className="tour-next-btn flex min-h-10 items-center gap-1 rounded-xl px-4 font-sans text-xs font-semibold shadow-md transition-all hover:shadow-lg"
+                >
+                  {voicesStep?.kind === 'welcome' || miracleStep?.kind === 'welcome'
+                    ? 'Begin'
+                    : 'Next'}
+                  <ChevronRight className="h-4 w-4" aria-hidden />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={exit}
+                  className="tour-next-btn flex min-h-10 items-center gap-1 rounded-xl px-4 font-sans text-xs font-semibold shadow-md transition-all hover:shadow-lg"
+                >
+                  Finish
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </button>
+              )}
+            </div>
+
+            <p className="tour-hint mt-2 text-center font-sans text-[10px] text-beige-500 dark:text-brown-500">
+              ← → to move · Esc to leave · you can exit at any time
+            </p>
+          </div>
+        )}
       </section>
     </div>,
     document.body,

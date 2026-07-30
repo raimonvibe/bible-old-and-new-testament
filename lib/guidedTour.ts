@@ -72,7 +72,9 @@ export interface Moment {
   }
 }
 
-function ref(
+/** Shared by other tour data modules (e.g. lib/miraclesTour.ts) so every tour
+ * builds passage references the same way. */
+export function ref(
   bookId: string,
   bookName: string,
   chapterNumber: string,
