@@ -182,6 +182,10 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
   const [furthestStep, setFurthestStep] = useState(0)
   const [seen, setSeen] = useState(true)
   const [voiceSheetOpen, setVoiceSheetOpen] = useState(false)
+  /** Tour-picker cards start collapsed so both options fit at a glance. */
+  const [expandedTourIds, setExpandedTourIds] = useState<Set<TourId>>(
+    () => new Set(),
+  )
 
   const narration = useTourNarration()
   const {
@@ -261,6 +265,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
     setSelectedTour(null)
     setStepIndex(0)
     setFurthestStep(0)
+    setExpandedTourIds(new Set())
     setOpen(true)
     setMinimized(false)
     setSeen(true)
@@ -278,10 +283,20 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
     setVoiceSheetOpen(false)
   }, [])
 
+  const toggleTourDetails = useCallback((id: TourId) => {
+    setExpandedTourIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
   const backToSelector = useCallback(() => {
     setSelectedTour(null)
     setStepIndex(0)
     setFurthestStep(0)
+    setExpandedTourIds(new Set())
     setVoiceSheetOpen(false)
     stopNarration()
   }, [stopNarration])
@@ -292,6 +307,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
     setSelectedTour(null)
     setStepIndex(0)
     setFurthestStep(0)
+    setExpandedTourIds(new Set())
     setVoiceSheetOpen(false)
     stopNarration()
     navigateRef.current(null)
@@ -908,16 +924,16 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 <div className="space-y-3">
                   {TOUR_CATALOG.map((t) => {
                     const Icon = TOUR_CARD_ICONS[t.id]
+                    const expanded = expandedTourIds.has(t.id)
+                    const detailsId = `tour-details-${t.id}`
                     const badgeClass =
                       t.id === 'miracles'
                         ? 'bg-rose-100 text-rose-900 ring-2 ring-rose-500/40 dark:bg-rose-950/60 dark:text-rose-100 dark:ring-rose-400/40'
                         : 'bg-beige-200/80 text-beige-800 ring-2 ring-beige-400/40 dark:bg-brown-800/80 dark:text-brown-100 dark:ring-brown-500/40'
                     return (
-                      <button
+                      <div
                         key={t.id}
-                        type="button"
-                        onClick={() => selectTour(t.id)}
-                        className="group w-full rounded-2xl border border-beige-300/60 bg-beige-50/60 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-beige-400 hover:bg-beige-100 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-beige-400/50 dark:border-brown-700/60 dark:bg-brown-900/40 dark:hover:border-brown-500 dark:hover:bg-brown-800/60"
+                        className="rounded-2xl border border-beige-300/60 bg-beige-50/60 p-3.5 dark:border-brown-700/60 dark:bg-brown-900/40"
                       >
                         <div className="flex items-start gap-3">
                           <span
@@ -927,32 +943,62 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                             <Icon className="h-5 w-5" aria-hidden />
                           </span>
                           <div className="min-w-0 flex-1">
-                            <h3 className="font-display text-lg font-bold text-beige-900 dark:text-brown-50">
+                            <h3 className="font-display text-lg font-bold leading-tight text-beige-900 dark:text-brown-50">
                               {t.title}
                             </h3>
-                            <p className="font-sans text-xs text-beige-600 dark:text-brown-400">
+                            <p className="mt-0.5 font-sans text-xs text-beige-600 dark:text-brown-400">
                               {t.subtitle}
                             </p>
-                            <p className="mt-1.5 font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-200">
-                              {t.description}
+                            <p className="mt-1.5 font-sans text-[11px] font-medium text-beige-700 dark:text-brown-300">
+                              {t.duration}
                             </p>
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              {[...t.facts, t.duration].map((f) => (
-                                <span
-                                  key={f}
-                                  className="inline-flex items-center rounded-full bg-beige-200/70 px-2 py-0.5 font-sans text-[10px] font-medium text-beige-700 dark:bg-brown-800/70 dark:text-brown-300"
-                                >
-                                  {f}
-                                </span>
-                              ))}
-                            </div>
                           </div>
-                          <ArrowRight
-                            className="mt-1 h-4 w-4 shrink-0 text-beige-400 transition-transform group-hover:translate-x-0.5 dark:text-brown-500"
-                            aria-hidden
-                          />
                         </div>
-                      </button>
+
+                        <div
+                          id={detailsId}
+                          hidden={!expanded}
+                          className="mt-3 border-t border-beige-300/50 pt-3 dark:border-brown-700/50"
+                        >
+                          <p className="font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-200">
+                            {t.description}
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {t.facts.map((f) => (
+                              <span
+                                key={f}
+                                className="inline-flex items-center rounded-full bg-beige-200/70 px-2 py-0.5 font-sans text-[10px] font-medium text-beige-700 dark:bg-brown-800/70 dark:text-brown-300"
+                              >
+                                {f}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="mt-3 flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleTourDetails(t.id)}
+                            aria-expanded={expanded}
+                            aria-controls={detailsId}
+                            className="flex min-h-10 flex-1 items-center justify-center gap-1 rounded-xl px-3 font-sans text-xs font-medium btn-surface hover:shadow-md"
+                          >
+                            <ChevronDown
+                              className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`}
+                              aria-hidden
+                            />
+                            {expanded ? 'Hide details' : 'Details'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => selectTour(t.id)}
+                            className="tour-next-btn flex min-h-10 flex-1 items-center justify-center gap-1 rounded-xl px-3 font-sans text-xs font-semibold shadow-md transition-all hover:shadow-lg"
+                          >
+                            Begin
+                            <ArrowRight className="h-4 w-4" aria-hidden />
+                          </button>
+                        </div>
+                      </div>
                     )
                   })}
                 </div>
