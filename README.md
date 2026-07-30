@@ -4,7 +4,7 @@
 
 A beautiful, modern web application for reading the entire New Testament, built with Next.js, TypeScript, and Tailwind CSS.
 
-🔗 **Live Demo**: [https://bible-new-testament.vercel.app/](https://bible-new-testament.vercel.app/)
+🔗 **Live Demo**: [https://bible-old-and-new-testament.vercel.app/](https://bible-old-and-new-testament.vercel.app/) 
 
 ## Features
 
