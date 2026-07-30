@@ -3,16 +3,44 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * iOS Safari paints whatever is behind the document while rubber-band
+   * overscrolling (or while its chrome bar animates near the bottom of the
+   * page). If only <body> carries the background, that reveal shows plain
+   * white. Giving <html> the same background — and sizing both to the
+   * dynamic viewport height, which accounts for Safari's collapsing toolbar
+   * — closes the gap everywhere this can happen, not just in the guided tour.
+   */
   html {
-    @apply scroll-smooth;
+    @apply scroll-smooth bg-theme-light;
+    min-height: 100vh;
+  }
+
+  html.dark {
+    @apply bg-theme-dark;
   }
 
   body {
-    @apply font-serif min-h-screen text-beige-900 bg-theme-light;
+    @apply font-serif text-beige-900 bg-theme-light;
+    min-height: 100vh;
   }
 
   html.dark body {
     @apply text-brown-100 bg-theme-dark;
+  }
+
+  /* dvh accounts for Safari's collapsing toolbar, so the reveal during
+     rubber-band overscroll is never shorter than the true visible viewport.
+     Kept behind @supports (rather than a second min-height line in the rules
+     above) because this build pipeline's CSS minifier merges same-property
+     declarations within one rule and would otherwise silently discard
+     whichever one it decides is "redundant" — @supports can't be merged away
+     since removing it would change behavior. */
+  @supports (min-height: 100dvh) {
+    html,
+    body {
+      min-height: 100dvh;
+    }
   }
 
   h1,
