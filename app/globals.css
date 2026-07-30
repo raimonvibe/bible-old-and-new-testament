@@ -4,43 +4,56 @@
 
 @layer base {
   /*
-   * iOS Safari paints whatever is behind the document while rubber-band
-   * overscrolling (or while its chrome bar animates near the bottom of the
-   * page). If only <body> carries the background, that reveal shows plain
-   * white. Giving <html> the same background — and sizing both to the
-   * dynamic viewport height, which accounts for Safari's collapsing toolbar
-   * — closes the gap everywhere this can happen, not just in the guided tour.
+   * Mobile browsers can reveal whatever is behind the document — during iOS
+   * rubber-band overscroll, or in the gap their own address-bar-collapse
+   * animation briefly leaves uncovered. `vh`/`dvh`/`svh` all try to describe
+   * that animation in CSS, but mobile Chrome has a longstanding, acknowledged
+   * bug where they can collapse to identical (wrong) values, so sizing this
+   * backdrop with any of them inherits that bug.
+   *
+   * Primary fix: a `position: fixed` layer covering the browser's actual
+   * current viewport (no unit conversion), so it cannot be short by the
+   * toolbar's height regardless of engine/bug.
+   *
+   * Backup: solid background-color on html/body. WKWebView (Safari and
+   * Chrome-iOS) samples background-color — not background-image gradients —
+   * for the under-page / rubber-band tint. Gradients alone can still flash
+   * white; the solid color seals that case.
    */
   html {
     @apply scroll-smooth bg-theme-light;
+    background-color: #f5f1e8;
     min-height: 100vh;
   }
 
   html.dark {
     @apply bg-theme-dark;
+    background-color: #2c1f14;
+  }
+
+  html::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    @apply bg-theme-light;
+    background-color: #f5f1e8;
+  }
+
+  html.dark::before {
+    @apply bg-theme-dark;
+    background-color: #2c1f14;
   }
 
   body {
     @apply font-serif text-beige-900 bg-theme-light;
+    background-color: #f5f1e8;
     min-height: 100vh;
   }
 
   html.dark body {
     @apply text-brown-100 bg-theme-dark;
-  }
-
-  /* dvh accounts for Safari's collapsing toolbar, so the reveal during
-     rubber-band overscroll is never shorter than the true visible viewport.
-     Kept behind @supports (rather than a second min-height line in the rules
-     above) because this build pipeline's CSS minifier merges same-property
-     declarations within one rule and would otherwise silently discard
-     whichever one it decides is "redundant" — @supports can't be merged away
-     since removing it would change behavior. */
-  @supports (min-height: 100dvh) {
-    html,
-    body {
-      min-height: 100dvh;
-    }
+    background-color: #2c1f14;
   }
 
   h1,
