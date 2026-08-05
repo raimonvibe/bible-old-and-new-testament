@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  applyVoice,
   clearChunkHighlights,
   getReadableChunks,
   getSelectionChunk,
@@ -137,10 +138,9 @@ export function useReadAloud() {
       utterance.pitch = p
       utterance.volume = v
 
-      const voice = window.speechSynthesis
-        ?.getVoices()
-        .find((item) => item.voiceURI === uri)
-      if (voice) utterance.voice = voice
+      // Sets utterance.lang too — without it the browser reads in its own UI
+      // language rather than the chosen voice's.
+      applyVoice(utterance, window.speechSynthesis?.getVoices() ?? [], uri)
 
       utterance.onend = () => {
         const current = sessionRef.current

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { pickDefaultVoice, usableVoices } from '@/lib/readAloud'
+import { applyVoice, pickDefaultVoice, usableVoices } from '@/lib/readAloud'
 
 const VOICE_KEY = 'tour-voice-uri'
 const RATE_KEY = 'tour-speech-rate'
@@ -125,13 +125,11 @@ export function useTourNarration() {
       const utterance = new SpeechSynthesisUtterance(queue[index])
       utterance.rate = settingsRef.current.rate
 
-      const voice = window.speechSynthesis
-        .getVoices()
-        .find((v) => v.voiceURI === settingsRef.current.voiceURI)
-      if (voice) {
-        utterance.voice = voice
-        utterance.lang = voice.lang
-      }
+      applyVoice(
+        utterance,
+        window.speechSynthesis.getVoices(),
+        settingsRef.current.voiceURI,
+      )
 
       utterance.onend = () => {
         const now = sessionRef.current

@@ -191,19 +191,24 @@ export function highlightChunk(element: HTMLElement) {
   element.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
-function voiceQualityScore(voice: SpeechSynthesisVoice): number {
+function voiceQualityScore(
+  voice: SpeechSynthesisVoice,
+  pageLanguage: string,
+): number {
   let score = 0
   if (!voice.localService) score += 10
   if (/natural|premium|enhanced|neural|online|cloud/i.test(voice.name)) score += 5
   if (/google|microsoft|amazon|apple/i.test(voice.name)) score += 2
-  if (voice.lang.startsWith('en')) score += 3
+  if (primaryLanguage(voice.lang) === pageLanguage) score += 3
   if (voice.default) score += 1
   return score
 }
 
 export function sortVoices(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
+  const pageLanguage = primaryLanguage(documentLanguage())
   return [...voices].sort((a, b) => {
-    const diff = voiceQualityScore(b) - voiceQualityScore(a)
+    const diff =
+      voiceQualityScore(b, pageLanguage) - voiceQualityScore(a, pageLanguage)
     if (diff !== 0) return diff
     return a.name.localeCompare(b.name)
   })
@@ -269,6 +274,63 @@ export function usableVoices(
   return sortVoices(genuine.length > 0 ? genuine : voices)
 }
 
+/**
+ * The language the page is written in — "en" from `<html lang="en">`.
+ *
+ * Speech synthesis falls back to the *browser's* language when an utterance
+ * has no `lang`, so on a Dutch-configured browser English scripture is handed
+ * to a Dutch voice. Everything here anchors to the document instead.
+ */
+export function documentLanguage(): string {
+  if (typeof document === 'undefined') return 'en'
+  return document.documentElement.lang || 'en'
+}
+
+/**
+ * Voice languages arrive in three shapes across platforms: BCP-47 on desktop
+ * and iOS ("en-US"), Java locale form from Android's TTS engines ("en_US",
+ * "zh_CN_#Hans"), and a bare language from speech-dispatcher on Linux ("en").
+ *
+ * Only BCP-47 is meaningful in `utterance.lang`. A tag the engine cannot parse
+ * is treated as no tag at all, which drops it back to the browser's locale —
+ * exactly the fault this module exists to prevent.
+ */
+function normaliseTag(tag: string): string {
+  const [base] = (tag ?? '').split('#') // drop Android's "#Hans" script suffix
+  return base.replace(/_/g, '-').replace(/-+$/, '').trim()
+}
+
+/** "en-GB" → "en", so regional variants still count as the same language. */
+function primaryLanguage(tag: string): string {
+  return normaliseTag(tag).split('-')[0].toLowerCase()
+}
+
+/**
+ * Point an utterance at the chosen voice *and* at that voice's language.
+ *
+ * `utterance.lang` does not follow `utterance.voice` — it defaults to the
+ * browser's language, and the platform engine honours lang over voice. Leaving
+ * it unset is what made every voice speak in the browser's locale.
+ */
+export function applyVoice(
+  utterance: SpeechSynthesisUtterance,
+  voices: SpeechSynthesisVoice[],
+  voiceURI: string,
+): SpeechSynthesisVoice | undefined {
+  const voice = voiceURI
+    ? voices.find((v) => v.voiceURI === voiceURI)
+    : undefined
+
+  // An engine that reports no usable tag is no better than no voice at all —
+  // fall through to the page's language rather than assign an empty lang.
+  const tag = voice ? normaliseTag(voice.lang) : ''
+
+  if (voice) utterance.voice = voice
+  utterance.lang = tag || documentLanguage()
+
+  return voice
+}
+
 export function pickDefaultVoice(
   voices: SpeechSynthesisVoice[],
   preferredURI?: string,
@@ -278,10 +340,11 @@ export function pickDefaultVoice(
     if (saved) return saved
   }
 
-  // The text is English, so start on an English voice even though every
+  // Start on a voice that speaks the page's language even though every
   // language is on offer — sortVoices has already put the best one first.
-  const english = voices.filter((v) => v.lang.startsWith('en'))
-  const pool = english.length > 0 ? english : voices
+  const pageLanguage = primaryLanguage(documentLanguage())
+  const matching = voices.filter((v) => primaryLanguage(v.lang) === pageLanguage)
+  const pool = matching.length > 0 ? matching : voices
   return pool.find((v) => !v.localService) ?? pool[0]
 }
 
@@ -293,7 +356,7 @@ export function formatVoiceLabel(voice: SpeechSynthesisVoice): string {
 
 /** "nl-NL" → "Dutch (Netherlands)", falling back to the raw tag. */
 export function describeLanguage(tag: string): string {
-  const normalised = tag.replace('_', '-')
+  const normalised = normaliseTag(tag)
   try {
     const [language, region] = normalised.split('-')
     const languageNames = new Intl.DisplayNames(['en'], { type: 'language' })
@@ -314,9 +377,10 @@ export function groupVoicesByLanguage(
   voices: SpeechSynthesisVoice[],
 ): { label: string; voices: SpeechSynthesisVoice[] }[] {
   const byLanguage = new Map<string, SpeechSynthesisVoice[]>()
+  const pageLanguage = primaryLanguage(documentLanguage())
 
   for (const voice of voices) {
-    const tag = voice.lang.replace('_', '-')
+    const tag = normaliseTag(voice.lang)
     const list = byLanguage.get(tag) ?? []
     list.push(voice)
     byLanguage.set(tag, list)
@@ -329,10 +393,10 @@ export function groupVoicesByLanguage(
       voices: sortVoices(list),
     }))
     .sort((a, b) => {
-      // The text is English, so English voices lead; the rest are alphabetical.
-      const aEnglish = a.tag.startsWith('en')
-      const bEnglish = b.tag.startsWith('en')
-      if (aEnglish !== bEnglish) return aEnglish ? -1 : 1
+      // Voices that speak the page's language lead; the rest are alphabetical.
+      const aMatches = primaryLanguage(a.tag) === pageLanguage
+      const bMatches = primaryLanguage(b.tag) === pageLanguage
+      if (aMatches !== bMatches) return aMatches ? -1 : 1
       return a.label.localeCompare(b.label)
     })
     .map(({ label, voices: list }) => ({ label, voices: list }))
