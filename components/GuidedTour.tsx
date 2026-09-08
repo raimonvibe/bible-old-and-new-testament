@@ -18,6 +18,7 @@ import {
   Fish,
   Flame,
   Footprints,
+  Globe,
   Heart,
   HeartPulse,
   Languages,
@@ -74,6 +75,8 @@ import {
 } from '@/lib/miraclesTour'
 import { TOUR_CATALOG, type TourId } from '@/lib/tourCatalog'
 import { useTourNarration } from '@/hooks/useTourNarration'
+import { useTourTranslation } from '@/hooks/useTourTranslation'
+import { SOURCE_LANGUAGE, format, mapStrings } from '@/lib/tourTranslation'
 import { formatVoiceLabel, groupVoicesByLanguage } from '@/lib/readAloud'
 
 /** Where the tour wants the reader to be. */
@@ -182,10 +185,28 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
   const [furthestStep, setFurthestStep] = useState(0)
   const [seen, setSeen] = useState(true)
   const [voiceSheetOpen, setVoiceSheetOpen] = useState(false)
+  const [languageSheetOpen, setLanguageSheetOpen] = useState(false)
   /** Tour-picker cards start collapsed so both options fit at a glance. */
   const [expandedTourIds, setExpandedTourIds] = useState<Set<TourId>>(
     () => new Set(),
   )
+
+  const translation = useTourTranslation()
+  const { tr, language, rtl } = translation
+
+  /**
+   * The tour's own copy, in the reader's language. Every string in these
+   * structures goes through `tr`, so the hundred places the panel renders them
+   * need no translation code of their own — and while a translation is still
+   * arriving they simply read as the original English.
+   */
+  const moments = useMemo(() => mapStrings(MOMENTS, tr), [tr])
+  const tourIntro = useMemo(() => mapStrings(TOUR_INTRO, tr), [tr])
+  const tourOutro = useMemo(() => mapStrings(TOUR_OUTRO, tr), [tr])
+  const sections = useMemo(() => mapStrings(TESTAMENT_SECTIONS, tr), [tr])
+  const miracleIntro = useMemo(() => mapStrings(MIRACLE_INTRO, tr), [tr])
+  const miracleOutro = useMemo(() => mapStrings(MIRACLE_OUTRO, tr), [tr])
+  const catalog = useMemo(() => mapStrings(TOUR_CATALOG, tr), [tr])
 
   const narration = useTourNarration()
   const {
@@ -193,11 +214,15 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
     includePassage,
     rate: speechRate,
     voiceURI,
+    setVoiceURI,
+    voices: narrationVoices,
     stop: stopNarration,
   } = narration
   // Held in a ref so the narration effect keys off the settings, not identity.
   const speakRef = useRef(narration.speak)
   speakRef.current = narration.speak
+  const translateSegmentsRef = useRef(translation.translateSegments)
+  translateSegmentsRef.current = translation.translateSegments
 
   const headingRef = useRef<HTMLHeadingElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
@@ -225,17 +250,17 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
     : null
 
   const momentIndex = voicesStep ? momentIndexOfStep(voicesStep) : null
-  const moment = momentIndex !== null ? MOMENTS[momentIndex] : null
+  const moment = momentIndex !== null ? moments[momentIndex] : null
   const voice =
     voicesStep?.kind === 'voice'
-      ? MOMENTS[voicesStep.momentIndex].voices[voicesStep.voiceIndex]
+      ? moments[voicesStep.momentIndex].voices[voicesStep.voiceIndex]
       : null
 
   const sectionIndex = miracleStep ? sectionIndexOfStep(miracleStep) : null
-  const section = sectionIndex !== null ? TESTAMENT_SECTIONS[sectionIndex] : null
+  const section = sectionIndex !== null ? sections[sectionIndex] : null
   const miracle =
     miracleStep?.kind === 'miracle'
-      ? TESTAMENT_SECTIONS[miracleStep.sectionIndex].miracles[
+      ? sections[miracleStep.sectionIndex].miracles[
           miracleStep.miracleIndex
         ]
       : null
@@ -404,6 +429,8 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
   useEffect(() => {
     if (!open || !speechOn || selectedTour === null) return
 
+    let cancelled = false
+
     const timer = window.setTimeout(() => {
       const segments =
         isVoices && voicesStep
@@ -424,12 +451,48 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
         if (verses.length) segments.push('The passage.', ...verses)
       }
 
-      speakRef.current(segments)
+      // The narration is built from the English source, so it goes through the
+      // translator too — otherwise a translated panel would be read aloud in
+      // English. In English this resolves immediately and nothing waits.
+      void translateSegmentsRef.current(segments).then((spoken) => {
+        if (!cancelled) speakRef.current(spoken)
+      })
     }, NARRATION_DELAY)
 
-    return () => window.clearTimeout(timer)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, speechOn, includePassage, speechRate, voiceURI, stepIndex, selectedTour])
+  }, [
+    open,
+    speechOn,
+    includePassage,
+    speechRate,
+    voiceURI,
+    stepIndex,
+    selectedTour,
+    language,
+  ])
+
+  /**
+   * A translated tour read aloud by an English voice is close to unusable, so
+   * when the language changes, move to an installed voice for that language if
+   * the device has one. A deliberate later choice in the narration sheet stands
+   * — this only fires when the current voice is for a different language.
+   */
+  useEffect(() => {
+    if (language === SOURCE_LANGUAGE || narrationVoices.length === 0) return
+    const wanted = language.split('-')[0].toLowerCase()
+    const baseOf = (voice: SpeechSynthesisVoice) =>
+      voice.lang.split(/[-_]/)[0].toLowerCase()
+
+    const current = narrationVoices.find((v) => v.voiceURI === voiceURI)
+    if (current && baseOf(current) === wanted) return
+
+    const match = narrationVoices.find((v) => baseOf(v) === wanted)
+    if (match) setVoiceURI(match.voiceURI)
+  }, [language, narrationVoices, voiceURI, setVoiceURI])
 
   // Move focus to the new step's heading so screen readers follow along.
   useEffect(() => {
@@ -465,44 +528,47 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
   const progress = lastStep > 0 ? (stepIndex / lastStep) * 100 : 0
 
   const stepLabel = useMemo(() => {
-    if (selectedTour === null) return 'Choose a tour'
+    const together = (title: string) =>
+      format(tr('{title} · together'), { title }, `${title} · together`)
+
+    if (selectedTour === null) return tr('Choose a tour')
     if (isVoices && voicesStep) {
       switch (voicesStep.kind) {
         case 'welcome':
-          return 'Welcome'
+          return tr('Welcome')
         case 'moment-intro':
-          return MOMENTS[voicesStep.momentIndex].title
+          return moments[voicesStep.momentIndex].title
         case 'voice':
-          return `${MOMENTS[voicesStep.momentIndex].voices[voicesStep.voiceIndex].name} · ${
-            MOMENTS[voicesStep.momentIndex].title
+          return `${moments[voicesStep.momentIndex].voices[voicesStep.voiceIndex].name} · ${
+            moments[voicesStep.momentIndex].title
           }`
         case 'synthesis':
-          return `${MOMENTS[voicesStep.momentIndex].title} · together`
+          return together(moments[voicesStep.momentIndex].title)
         case 'outro':
-          return 'Closing'
+          return tr('Closing')
       }
     }
     if (isMiracles && miracleStep) {
       switch (miracleStep.kind) {
         case 'welcome':
-          return 'Welcome'
+          return tr('Welcome')
         case 'section-intro':
-          return TESTAMENT_SECTIONS[miracleStep.sectionIndex].title
+          return sections[miracleStep.sectionIndex].title
         case 'miracle':
-          return TESTAMENT_SECTIONS[miracleStep.sectionIndex].miracles[
+          return sections[miracleStep.sectionIndex].miracles[
             miracleStep.miracleIndex
           ].title
         case 'section-synthesis':
-          return `${TESTAMENT_SECTIONS[miracleStep.sectionIndex].title} · together`
+          return together(sections[miracleStep.sectionIndex].title)
         case 'outro':
-          return 'Closing'
+          return tr('Closing')
       }
     }
     return ''
-  }, [selectedTour, isVoices, isMiracles, voicesStep, miracleStep])
+  }, [selectedTour, isVoices, isMiracles, voicesStep, miracleStep, moments, sections, tr])
 
   const groupPills: GroupPill[] = isVoices
-    ? MOMENTS.map((m, i) => {
+    ? moments.map((m, i) => {
         const first = firstStepOfMoment(i)
         return {
           key: m.id,
@@ -518,7 +584,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
         }
       })
     : isMiracles
-      ? TESTAMENT_SECTIONS.map((s, i) => {
+      ? sections.map((s, i) => {
           const first = firstStepOfSection(i)
           return {
             key: s.id,
@@ -539,14 +605,18 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
     isVoices && moment && momentIndex !== null
       ? moment.voices.map((v, i) => ({
           key: v.id,
-          label: `Go to ${v.name}'s account`,
+          label: format(
+            tr("Go to {name}'s account"),
+            { name: v.name },
+            `Go to ${v.name}'s account`,
+          ),
           target: firstStepOfMoment(momentIndex) + 1 + i,
           accentDot: VOICE_ACCENTS[v.id].dot,
         }))
       : isMiracles && section && sectionIndex !== null
         ? section.miracles.map((m, i) => ({
             key: m.id,
-            label: `Go to ${m.title}`,
+            label: format(tr('Go to {title}'), { title: m.title }, `Go to ${m.title}`),
             target: firstStepOfSection(sectionIndex) + 1 + i,
             accentDot: TESTAMENT_ACCENTS[section.id].dot,
           }))
@@ -558,13 +628,18 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
 
   if (!open) {
     return createPortal(
-      <div className="tour-anchor" style={{ zIndex: 55 }}>
+      <div
+        className="tour-anchor"
+        style={{ zIndex: 55 }}
+        lang={language}
+        dir={rtl ? 'rtl' : 'ltr'}
+      >
         <button
           type="button"
           onClick={start}
           data-read-aloud-ignore
           className="tour-fab group pointer-events-auto flex min-h-14 items-center gap-2.5 rounded-full px-4 py-3 shadow-lg transition-all hover:scale-[1.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 sm:px-5"
-          aria-label="Start a guided tour"
+          aria-label={tr('Start a guided tour')}
         >
           {!seen && (
             <span
@@ -580,7 +655,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
             aria-hidden
           />
           <span className="font-sans text-sm font-semibold text-beige-50 dark:text-brown-50">
-            Guided tour
+            {tr('Guided tour')}
           </span>
         </button>
       </div>,
@@ -592,7 +667,12 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
 
   if (minimized) {
     return createPortal(
-      <div className="tour-anchor" style={{ zIndex: 55 }}>
+      <div
+        className="tour-anchor"
+        style={{ zIndex: 55 }}
+        lang={language}
+        dir={rtl ? 'rtl' : 'ltr'}
+      >
         <div
           data-read-aloud-ignore
           className="tour-panel-shell pointer-events-auto flex items-center gap-2 rounded-full py-2 pl-4 pr-2 shadow-lg"
@@ -602,7 +682,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
               className={`h-3.5 w-3.5 shrink-0 text-beige-600 dark:text-brown-400 ${
                 narration.speaking ? 'tour-speaking' : ''
               }`}
-              aria-label="Narration is on"
+              aria-label={tr('Narration is on')}
             />
           )}
           <span className="font-sans text-xs font-medium text-beige-800 dark:text-brown-100">
@@ -612,7 +692,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
             type="button"
             onClick={() => setMinimized(false)}
             className="tour-icon-btn"
-            aria-label="Expand the guided tour"
+            aria-label={tr('Expand the guided tour')}
           >
             <Maximize2 className="h-4 w-4" aria-hidden />
           </button>
@@ -620,7 +700,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
             type="button"
             onClick={exit}
             className="tour-icon-btn"
-            aria-label="Exit the guided tour"
+            aria-label={tr('Exit the guided tour')}
           >
             <X className="h-4 w-4" aria-hidden />
           </button>
@@ -633,7 +713,8 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
   /* --- panel ------------------------------------------------------------ */
 
   const activeTitle =
-    TOUR_CATALOG.find((t) => t.id === selectedTour)?.title ?? 'choose an experience'
+    catalog.find((t) => t.id === selectedTour)?.title ??
+    tr('choose an experience')
 
   return createPortal(
     <div className="tour-anchor" style={{ zIndex: 55 }}>
@@ -641,9 +722,15 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
         ref={panelRef}
         role="dialog"
         aria-modal="false"
-        aria-label={`Guided tour: ${activeTitle}`}
+        lang={language}
+        dir={rtl ? 'rtl' : 'ltr'}
+        aria-label={format(
+          tr('Guided tour: {title}'),
+          { title: activeTitle },
+          `Guided tour: ${activeTitle}`,
+        )}
         data-read-aloud-ignore
-        data-voice-sheet={voiceSheetOpen ? 'true' : undefined}
+        data-voice-sheet={voiceSheetOpen || languageSheetOpen ? 'true' : undefined}
         className="tour-panel-shell tour-panel pointer-events-auto flex flex-col overflow-hidden rounded-2xl shadow-2xl"
       >
         {/* header */}
@@ -651,15 +738,47 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="font-sans text-[11px] font-semibold uppercase tracking-wider text-beige-600 dark:text-brown-400">
-                Guided tour
+                {tr('Guided tour')}
               </p>
               <p className="truncate font-sans text-xs text-beige-500 dark:text-brown-500">
                 {selectedTour === null
-                  ? 'Pick a tour to begin'
-                  : `Step ${stepIndex + 1} of ${lastStep + 1} · ${stepLabel}`}
+                  ? tr('Pick a tour to begin')
+                  : `${format(
+                      tr('Step {current} of {total}'),
+                      { current: stepIndex + 1, total: lastStep + 1 },
+                      `Step ${stepIndex + 1} of ${lastStep + 1}`,
+                    )} · ${stepLabel}`}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-1">
+              {translation.supported && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVoiceSheetOpen(false)
+                    setLanguageSheetOpen((open) => !open)
+                    void translation.loadLanguages()
+                  }}
+                  className={`tour-icon-btn ${
+                    language !== SOURCE_LANGUAGE ? 'tour-icon-btn-on' : ''
+                  }`}
+                  aria-expanded={languageSheetOpen}
+                  aria-label={tr('Translate the tour')}
+                  title={tr('Translate the tour')}
+                >
+                  <Globe
+                    className={`h-4 w-4 ${
+                      translation.status === 'downloading' ||
+                      translation.status === 'translating' ||
+                      translation.status === 'preparing'
+                        ? 'tour-speaking'
+                        : ''
+                    }`}
+                    aria-hidden
+                  />
+                </button>
+              )}
+
               {selectedTour !== null && narration.supported && (
                 <div className="tour-speech-control flex items-center">
                   <button
@@ -672,7 +791,9 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                     className={`tour-icon-btn ${speechOn ? 'tour-icon-btn-on' : ''}`}
                     aria-pressed={speechOn}
                     aria-label={
-                      speechOn ? 'Turn narration off' : 'Read the tour aloud'
+                      speechOn
+                        ? tr('Turn narration off')
+                        : tr('Read the tour aloud')
                     }
                   >
                     {speechOn ? (
@@ -689,10 +810,13 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                   {speechOn && (
                     <button
                       type="button"
-                      onClick={() => setVoiceSheetOpen((v) => !v)}
+                      onClick={() => {
+                        setLanguageSheetOpen(false)
+                        setVoiceSheetOpen((v) => !v)
+                      }}
                       className="tour-icon-btn tour-icon-btn-slim"
                       aria-expanded={voiceSheetOpen}
-                      aria-label="Voice and speed"
+                      aria-label={tr('Voice and speed')}
                     >
                       <ChevronDown
                         className={`h-3.5 w-3.5 transition-transform ${voiceSheetOpen ? 'rotate-180' : ''}`}
@@ -708,7 +832,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                   type="button"
                   onClick={() => setMinimized(true)}
                   className="tour-icon-btn"
-                  aria-label="Minimize the tour and read the passage"
+                  aria-label={tr('Minimize the tour and read the passage')}
                 >
                   <Minimize2 className="h-4 w-4" aria-hidden />
                 </button>
@@ -717,7 +841,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 type="button"
                 onClick={exit}
                 className="tour-icon-btn"
-                aria-label="Exit the guided tour"
+                aria-label={tr('Exit the guided tour')}
               >
                 <X className="h-4 w-4" aria-hidden />
               </button>
@@ -742,7 +866,17 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                   }`}
                   aria-current={g.active ? 'step' : undefined}
                   aria-label={
-                    g.reached ? `Go to ${g.label}` : `${g.label} — not reached yet`
+                    g.reached
+                      ? format(
+                          tr('Go to {title}'),
+                          { title: g.label },
+                          `Go to ${g.label}`,
+                        )
+                      : format(
+                          tr('{title} — not reached yet'),
+                          { title: g.label },
+                          `${g.label} — not reached yet`,
+                        )
                   }
                 >
                   {g.done && !g.active ? (
@@ -764,7 +898,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
               aria-valuenow={Math.round(progress)}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Tour progress"
+              aria-label={tr('Tour progress')}
             >
               <div
                 className="tour-progress-bar h-full transition-all duration-500"
@@ -777,6 +911,104 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
         {/* body — a flex column so the scroll area keeps a definite height and
             the voice sheet has something to absolutely fill */}
         <div className="relative flex min-h-0 flex-1 flex-col">
+          {languageSheetOpen && (
+            <div className="tour-voice-sheet tour-panel-body absolute inset-0 z-10 overflow-y-auto px-4 py-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Globe
+                  className="h-4 w-4 text-beige-700 dark:text-brown-300"
+                  aria-hidden
+                />
+                <h2 className="font-display text-base font-bold text-beige-900 dark:text-brown-50">
+                  {tr('Tour language')}
+                </h2>
+              </div>
+
+              <p className="mb-3 font-sans text-[11px] leading-relaxed text-beige-500 dark:text-brown-500">
+                {tr(
+                  'Your browser translates the tour on this device — nothing is sent anywhere. The scripture in the reader behind the panel stays in the World English Bible wording.',
+                )}
+              </p>
+
+              {translation.status === 'downloading' && (
+                <div className="mb-3">
+                  <p className="mb-1 font-sans text-[11px] text-beige-600 dark:text-brown-400">
+                    {tr('Downloading the language pack…')}
+                  </p>
+                  <div className="h-1 overflow-hidden rounded-full bg-beige-200 dark:bg-brown-800">
+                    <div
+                      className="tour-progress-bar h-full transition-all"
+                      style={{
+                        width: `${Math.round(translation.downloadProgress * 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {translation.status === 'translating' && (
+                <p className="mb-3 font-sans text-[11px] text-beige-600 dark:text-brown-400">
+                  {tr('Translating the tour… lines fill in as they arrive.')}
+                </p>
+              )}
+
+              {translation.status === 'error' && (
+                <p className="mb-3 font-sans text-[11px] text-rose-700 dark:text-rose-300">
+                  {tr(
+                    'That language could not be prepared. Pick another, or read the tour in English.',
+                  )}
+                </p>
+              )}
+
+              {translation.languages.length === 0 ? (
+                <p className="font-sans text-xs text-beige-600 dark:text-brown-400">
+                  {translation.languagesLoaded
+                    ? tr(
+                        'This browser cannot translate on this device yet. Chrome and Edge 138 and later can, once the language pack is allowed to download.',
+                      )
+                    : tr('Checking which languages this browser can translate…')}
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { code: SOURCE_LANGUAGE, label: tr('English (original)') },
+                    ...translation.languages.map((l) => ({
+                      code: l.code,
+                      label: l.label,
+                    })),
+                  ].map((option) => (
+                    <button
+                      key={option.code}
+                      type="button"
+                      lang={option.code}
+                      onClick={() => void translation.setLanguage(option.code)}
+                      aria-pressed={language === option.code}
+                      className={`min-h-10 truncate rounded-lg px-2.5 text-start font-sans text-xs font-medium transition-colors ${
+                        language === option.code
+                          ? 'bg-beige-800 text-beige-50 dark:bg-brown-200 dark:text-brown-950'
+                          : 'bg-beige-100 text-beige-800 hover:bg-beige-200 dark:bg-brown-800 dark:text-brown-100 dark:hover:bg-brown-700'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-4 flex items-center gap-2 border-t border-beige-200 pt-3 dark:border-brown-700">
+                <p className="flex-1 font-sans text-[10px] leading-relaxed text-beige-500 dark:text-brown-500">
+                  {tr('Machine translation — the English text is the original.')}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setLanguageSheetOpen(false)}
+                  className="tour-next-btn flex min-h-10 items-center rounded-xl px-4 font-sans text-xs font-semibold shadow-md"
+                >
+                  {tr('Done')}
+                </button>
+              </div>
+            </div>
+          )}
+
           {voiceSheetOpen && (
             <div className="tour-voice-sheet tour-panel-body absolute inset-0 z-10 overflow-y-auto px-4 py-4">
               <div className="mb-3 flex items-center gap-2">
@@ -785,20 +1017,21 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                   aria-hidden
                 />
                 <h2 className="font-display text-base font-bold text-beige-900 dark:text-brown-50">
-                  Narration
+                  {tr('Narration')}
                 </h2>
               </div>
 
               {narration.voices.length === 0 ? (
                 <p className="font-sans text-xs text-beige-600 dark:text-brown-400">
-                  Your browser hasn&rsquo;t offered any voices yet. Try again in a
-                  moment.
+                  {tr(
+                    'Your browser hasn’t offered any voices yet. Try again in a moment.',
+                  )}
                 </p>
               ) : (
                 <div className="space-y-4">
                   <label className="block">
                     <span className="mb-1 block font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
-                      Voice
+                      {tr('Voice')}
                     </span>
                     <select
                       value={voiceURI}
@@ -816,15 +1049,19 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                       ))}
                     </select>
                     <span className="mt-1.5 block font-sans text-[10px] leading-relaxed text-beige-500 dark:text-brown-500">
-                      Grouped by language, from the voices installed on your
-                      device. The tour text stays in English, so another
-                      language&rsquo;s voice will read it in that accent.
+                      {language === SOURCE_LANGUAGE
+                        ? tr(
+                            'Grouped by language, from the voices installed on your device. The tour text stays in English, so another language’s voice will read it in that accent.',
+                          )
+                        : tr(
+                            'Grouped by language, from the voices installed on your device. The tour is translated, so choose a voice for the same language to hear it read properly.',
+                          )}
                     </span>
                   </label>
 
                   <div>
                     <span className="mb-1 block font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
-                      Speed
+                      {tr('Speed')}
                     </span>
                     <div className="flex flex-wrap gap-1.5">
                       {SPEEDS.map((s) => (
@@ -855,9 +1092,9 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                       className="mt-0.5 h-4 w-4 shrink-0 accent-beige-700 dark:accent-brown-300"
                     />
                     <span className="font-sans text-xs leading-snug text-beige-800 dark:text-brown-200">
-                      Read the highlighted passage too
+                      {tr('Read the highlighted passage too')}
                       <span className="mt-0.5 block text-[10px] text-beige-500 dark:text-brown-500">
-                        Adds the spotlit verses after each perspective.
+                        {tr('Adds the spotlit verses after each perspective.')}
                       </span>
                     </span>
                   </label>
@@ -872,12 +1109,14 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                             : isMiracles && miracleStep
                               ? narrationForMiracleStep(miracleStep)
                               : []
-                        speakRef.current(segments)
+                        void translateSegmentsRef
+                          .current(segments)
+                          .then((spoken) => speakRef.current(spoken))
                       }}
                       className="flex min-h-10 items-center gap-1.5 rounded-xl px-3 font-sans text-xs btn-surface hover:shadow-md"
                     >
                       <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-                      Replay step
+                      {tr('Replay step')}
                     </button>
                     <div className="flex-1" />
                     <button
@@ -885,7 +1124,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                       onClick={() => setVoiceSheetOpen(false)}
                       className="tour-next-btn flex min-h-10 items-center rounded-xl px-4 font-sans text-xs font-semibold shadow-md"
                     >
-                      Done
+                      {tr('Done')}
                     </button>
                   </div>
                 </div>
@@ -905,7 +1144,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 <div className="flex items-center gap-2 text-beige-700 dark:text-brown-300">
                   <Compass className="h-5 w-5" aria-hidden />
                   <span className="font-sans text-xs font-medium uppercase tracking-wide">
-                    Choose your walk
+                    {tr('Choose your walk')}
                   </span>
                 </div>
                 <h2
@@ -913,16 +1152,16 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                   tabIndex={-1}
                   className="font-display text-2xl font-bold text-beige-900 outline-none dark:text-brown-50"
                 >
-                  Guided Tours
+                  {tr('Guided Tours')}
                 </h2>
                 <p className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200">
-                  Two ways to walk through this reader with a passage open beside
-                  you. Pick one to begin — you can always come back and try the
-                  other.
+                  {tr(
+                    'Two ways to walk through this reader with a passage open beside you. Pick one to begin — you can always come back and try the other.',
+                  )}
                 </p>
 
                 <div className="space-y-3">
-                  {TOUR_CATALOG.map((t) => {
+                  {catalog.map((t) => {
                     const Icon = TOUR_CARD_ICONS[t.id]
                     const expanded = expandedTourIds.has(t.id)
                     const detailsId = `tour-details-${t.id}`
@@ -987,14 +1226,14 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                               className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`}
                               aria-hidden
                             />
-                            {expanded ? 'Hide details' : 'Details'}
+                            {expanded ? tr('Hide details') : tr('Details')}
                           </button>
                           <button
                             type="button"
                             onClick={() => selectTour(t.id)}
                             className="tour-next-btn flex min-h-10 flex-1 items-center justify-center gap-1 rounded-xl px-3 font-sans text-xs font-semibold shadow-md transition-all hover:shadow-lg"
                           >
-                            Begin
+                            {tr('Begin')}
                             <ArrowRight className="h-4 w-4" aria-hidden />
                           </button>
                         </div>
@@ -1014,7 +1253,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 <div className="flex items-center gap-2 text-beige-700 dark:text-brown-300">
                   <Sparkles className="h-5 w-5" aria-hidden />
                   <span className="font-sans text-xs font-medium uppercase tracking-wide">
-                    {TOUR_INTRO.duration}
+                    {tourIntro.duration}
                   </span>
                 </div>
                 <h2
@@ -1022,12 +1261,12 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                   tabIndex={-1}
                   className="font-display text-2xl font-bold text-beige-900 outline-none dark:text-brown-50"
                 >
-                  {TOUR_INTRO.title}
+                  {tourIntro.title}
                 </h2>
                 <p className="font-sans text-sm text-beige-600 dark:text-brown-400">
-                  {TOUR_INTRO.subtitle}
+                  {tourIntro.subtitle}
                 </p>
-                {TOUR_INTRO.body.map((p, i) => (
+                {tourIntro.body.map((p, i) => (
                   <p
                     key={i}
                     className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200"
@@ -1038,10 +1277,10 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 <div className="rounded-xl border border-beige-300/70 bg-beige-100/60 p-3 dark:border-brown-700/70 dark:bg-brown-900/40">
                   <p className="mb-2 flex items-center gap-1.5 font-sans text-xs font-semibold text-beige-700 dark:text-brown-300">
                     <Users className="h-3.5 w-3.5" aria-hidden />
-                    The five voices
+                    {tr('The five voices')}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {MOMENTS[0].voices.map((v) => (
+                    {moments[0].voices.map((v) => (
                       <span
                         key={v.id}
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-sans text-xs font-medium ${VOICE_ACCENTS[v.id].chip}`}
@@ -1142,7 +1381,11 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                     {voice.passage.label}
                   </span>
                   <span className="inline-flex items-center rounded-full bg-beige-200/70 px-2.5 py-1 font-sans text-[11px] text-beige-700 dark:bg-brown-800/70 dark:text-brown-300">
-                    written {voice.written}
+                    {format(
+                      tr('written {written}'),
+                      { written: voice.written },
+                      `written ${voice.written}`,
+                    )}
                   </span>
                 </div>
 
@@ -1163,7 +1406,11 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
 
                 <div>
                   <p className="mb-1.5 font-sans text-xs font-semibold uppercase tracking-wide text-beige-700 dark:text-brown-300">
-                    What only {voice.name} gives you
+                    {format(
+                      tr('What only {name} gives you'),
+                      { name: voice.name },
+                      `What only ${voice.name} gives you`,
+                    )}
                   </p>
                   <ul className="space-y-1.5">
                     {voice.distinctives.map((d, i) => (
@@ -1188,7 +1435,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 {voice.alsoSee && voice.alsoSee.length > 0 && (
                   <div>
                     <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
-                      Also read
+                      {tr('Also read')}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {voice.alsoSee.map((p) => (
@@ -1226,7 +1473,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
 
                 <div className="rounded-xl border border-emerald-600/25 bg-emerald-50/60 p-3 dark:border-emerald-400/20 dark:bg-emerald-950/25">
                   <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200">
-                    All five hold this in common
+                    {tr('All five hold this in common')}
                   </p>
                   <ul className="space-y-1">
                     {moment.synthesis.shared.map((s, i) => (
@@ -1246,7 +1493,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
 
                 <div>
                   <p className="mb-1 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
-                    Where they part ways
+                    {tr('Where they part ways')}
                   </p>
                   <p className="font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-200">
                     {moment.synthesis.differences}
@@ -1255,7 +1502,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
 
                 <div>
                   <p className="mb-1 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
-                    And why that matters
+                    {tr('And why that matters')}
                   </p>
                   <p className="font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-200">
                     {moment.synthesis.reflection}
@@ -1267,7 +1514,11 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                     {moment.synthesis.quote}
                   </p>
                   <cite className="mt-1.5 block font-sans text-[11px] not-italic text-beige-600 dark:text-brown-400">
-                    {moment.synthesis.passage.label} — highlighted in the reader
+                    {format(
+                      tr('{label} — highlighted in the reader'),
+                      { label: moment.synthesis.passage.label },
+                      `${moment.synthesis.passage.label} — highlighted in the reader`,
+                    )}
                   </cite>
                 </blockquote>
               </div>
@@ -1285,11 +1536,11 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                     tabIndex={-1}
                     className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
                   >
-                    {TOUR_OUTRO.title}
+                    {tourOutro.title}
                   </h2>
                 </div>
 
-                {TOUR_OUTRO.body.map((p, i) => (
+                {tourOutro.body.map((p, i) => (
                   <p
                     key={i}
                     className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200"
@@ -1300,19 +1551,19 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
 
                 <blockquote className="rounded-xl bg-beige-100/70 p-3 dark:bg-brown-900/50">
                   <p className="font-serif text-[15px] italic leading-relaxed text-beige-900 dark:text-brown-100">
-                    {TOUR_OUTRO.quote}
+                    {tourOutro.quote}
                   </p>
                   <cite className="mt-1.5 block font-sans text-[11px] not-italic text-beige-600 dark:text-brown-400">
-                    {TOUR_OUTRO.passage.label}
+                    {tourOutro.passage.label}
                   </cite>
                 </blockquote>
 
                 <div>
                   <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
-                    Carry on reading
+                    {tr('Carry on reading')}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {TOUR_OUTRO.furtherReading.map((p) => (
+                    {tourOutro.furtherReading.map((p) => (
                       <button
                         key={p.label}
                         type="button"
@@ -1332,14 +1583,14 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                     onClick={restart}
                     className="font-sans text-xs text-beige-600 underline underline-offset-2 transition-colors hover:text-beige-900 dark:text-brown-400 dark:hover:text-brown-100"
                   >
-                    Walk through it again
+                    {tr('Walk through it again')}
                   </button>
                   <button
                     type="button"
                     onClick={backToSelector}
                     className="font-sans text-xs text-beige-600 underline underline-offset-2 transition-colors hover:text-beige-900 dark:text-brown-400 dark:hover:text-brown-100"
                   >
-                    Try the other tour
+                    {tr('Try the other tour')}
                   </button>
                 </div>
               </div>
@@ -1354,7 +1605,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 <div className="flex items-center gap-2 text-beige-700 dark:text-brown-300">
                   <Sparkles className="h-5 w-5" aria-hidden />
                   <span className="font-sans text-xs font-medium uppercase tracking-wide">
-                    {MIRACLE_INTRO.duration}
+                    {miracleIntro.duration}
                   </span>
                 </div>
                 <h2
@@ -1362,12 +1613,12 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                   tabIndex={-1}
                   className="font-display text-2xl font-bold text-beige-900 outline-none dark:text-brown-50"
                 >
-                  {MIRACLE_INTRO.title}
+                  {miracleIntro.title}
                 </h2>
                 <p className="font-sans text-sm text-beige-600 dark:text-brown-400">
-                  {MIRACLE_INTRO.subtitle}
+                  {miracleIntro.subtitle}
                 </p>
-                {MIRACLE_INTRO.body.map((p, i) => (
+                {miracleIntro.body.map((p, i) => (
                   <p
                     key={i}
                     className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200"
@@ -1378,10 +1629,10 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 <div className="rounded-xl border border-beige-300/70 bg-beige-100/60 p-3 dark:border-brown-700/70 dark:bg-brown-900/40">
                   <p className="mb-2 flex items-center gap-1.5 font-sans text-xs font-semibold text-beige-700 dark:text-brown-300">
                     <LifeBuoy className="h-3.5 w-3.5" aria-hidden />
-                    Two testaments, fourteen wonders
+                    {tr('Two testaments, fourteen wonders')}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {TESTAMENT_SECTIONS.map((s) => (
+                    {sections.map((s) => (
                       <span
                         key={s.id}
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-sans text-xs font-medium ${TESTAMENT_ACCENTS[s.id].chip}`}
@@ -1504,7 +1755,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
 
                 <div>
                   <p className="mb-1.5 font-sans text-xs font-semibold uppercase tracking-wide text-beige-700 dark:text-brown-300">
-                    Notice
+                    {tr('Notice')}
                   </p>
                   <ul className="space-y-1.5">
                     {miracle.details.map((d, i) => (
@@ -1533,7 +1784,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 {miracle.alsoSee && miracle.alsoSee.length > 0 && (
                   <div>
                     <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
-                      Also read
+                      {tr('Also read')}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {miracle.alsoSee.map((p) => (
@@ -1554,7 +1805,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 <div className="rounded-xl border border-rose-500/25 bg-rose-50/50 p-3 dark:border-rose-400/20 dark:bg-rose-950/20">
                   <p className="mb-1 flex items-center gap-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-rose-800 dark:text-rose-200">
                     <MessageCircleQuestionMark className="h-3.5 w-3.5" aria-hidden />
-                    Something to consider
+                    {tr('Something to consider')}
                   </p>
                   <p className="font-serif text-[13px] italic leading-relaxed text-beige-900 dark:text-brown-100">
                     {miracle.reflectionQuestion}
@@ -1583,7 +1834,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
 
                   <div className="rounded-xl border border-emerald-600/25 bg-emerald-50/60 p-3 dark:border-emerald-400/20 dark:bg-emerald-950/25">
                     <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200">
-                      The pattern
+                      {tr('The pattern')}
                     </p>
                     <ul className="space-y-1">
                       {section.synthesis.patterns.map((s, i) => (
@@ -1603,7 +1854,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
 
                   <div>
                     <p className="mb-1 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
-                      And why that matters
+                      {tr('And why that matters')}
                     </p>
                     <p className="font-serif text-[13px] leading-relaxed text-beige-800 dark:text-brown-200">
                       {section.synthesis.reflection}
@@ -1615,8 +1866,11 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                       {section.synthesis.quote}
                     </p>
                     <cite className="mt-1.5 block font-sans text-[11px] not-italic text-beige-600 dark:text-brown-400">
-                      {section.synthesis.passage.label} — highlighted in the
-                      reader
+                      {format(
+                        tr('{label} — highlighted in the reader'),
+                        { label: section.synthesis.passage.label },
+                        `${section.synthesis.passage.label} — highlighted in the reader`,
+                      )}
                     </cite>
                   </blockquote>
                 </div>
@@ -1634,11 +1888,11 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                     tabIndex={-1}
                     className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
                   >
-                    {MIRACLE_OUTRO.title}
+                    {miracleOutro.title}
                   </h2>
                 </div>
 
-                {MIRACLE_OUTRO.body.map((p, i) => (
+                {miracleOutro.body.map((p, i) => (
                   <p
                     key={i}
                     className="font-serif text-sm leading-relaxed text-beige-800 dark:text-brown-200"
@@ -1649,19 +1903,19 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
 
                 <blockquote className="rounded-xl bg-beige-100/70 p-3 dark:bg-brown-900/50">
                   <p className="font-serif text-[15px] italic leading-relaxed text-beige-900 dark:text-brown-100">
-                    {MIRACLE_OUTRO.quote}
+                    {miracleOutro.quote}
                   </p>
                   <cite className="mt-1.5 block font-sans text-[11px] not-italic text-beige-600 dark:text-brown-400">
-                    {MIRACLE_OUTRO.passage.label}
+                    {miracleOutro.passage.label}
                   </cite>
                 </blockquote>
 
                 <div>
                   <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-beige-600 dark:text-brown-400">
-                    Carry on reading
+                    {tr('Carry on reading')}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {MIRACLE_OUTRO.furtherReading.map((p) => (
+                    {miracleOutro.furtherReading.map((p) => (
                       <button
                         key={p.label}
                         type="button"
@@ -1681,14 +1935,14 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                     onClick={restart}
                     className="font-sans text-xs text-beige-600 underline underline-offset-2 transition-colors hover:text-beige-900 dark:text-brown-400 dark:hover:text-brown-100"
                   >
-                    Walk through it again
+                    {tr('Walk through it again')}
                   </button>
                   <button
                     type="button"
                     onClick={backToSelector}
                     className="font-sans text-xs text-beige-600 underline underline-offset-2 transition-colors hover:text-beige-900 dark:text-brown-400 dark:hover:text-brown-100"
                   >
-                    Try the other tour
+                    {tr('Try the other tour')}
                   </button>
                 </div>
               </div>
@@ -1731,7 +1985,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 className="flex min-h-10 items-center gap-1 rounded-xl px-3 font-sans text-xs font-medium btn-surface transition-all hover:shadow-md"
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden />
-                Back
+                {tr('Back')}
               </button>
 
               <div className="flex-1" />
@@ -1741,10 +1995,14 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                   type="button"
                   onClick={skipGroup}
                   className="flex min-h-10 items-center gap-1 rounded-xl px-2.5 font-sans text-xs text-beige-600 transition-colors hover:text-beige-900 dark:text-brown-400 dark:hover:text-brown-100"
-                  aria-label={`Skip the rest of ${moment?.title ?? section?.title ?? ''}`}
+                  aria-label={format(
+                    tr('Skip the rest of {title}'),
+                    { title: moment?.title ?? section?.title ?? '' },
+                    `Skip the rest of ${moment?.title ?? section?.title ?? ''}`,
+                  )}
                 >
                   <SkipForward className="h-3.5 w-3.5" aria-hidden />
-                  Skip
+                  {tr('Skip')}
                 </button>
               )}
 
@@ -1755,8 +2013,8 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                   className="tour-next-btn flex min-h-10 items-center gap-1 rounded-xl px-4 font-sans text-xs font-semibold shadow-md transition-all hover:shadow-lg"
                 >
                   {voicesStep?.kind === 'welcome' || miracleStep?.kind === 'welcome'
-                    ? 'Begin'
-                    : 'Next'}
+                    ? tr('Begin')
+                    : tr('Next')}
                   <ChevronRight className="h-4 w-4" aria-hidden />
                 </button>
               ) : (
@@ -1765,14 +2023,14 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                   onClick={exit}
                   className="tour-next-btn flex min-h-10 items-center gap-1 rounded-xl px-4 font-sans text-xs font-semibold shadow-md transition-all hover:shadow-lg"
                 >
-                  Finish
+                  {tr('Finish')}
                   <ArrowRight className="h-4 w-4" aria-hidden />
                 </button>
               )}
             </div>
 
             <p className="tour-hint mt-2 text-center font-sans text-[10px] text-beige-500 dark:text-brown-500">
-              ← → to move · Esc to leave · you can exit at any time
+              {tr('← → to move · Esc to leave · you can exit at any time')}
             </p>
           </div>
         )}
