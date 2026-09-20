@@ -127,10 +127,18 @@ export default function BibleApp({ bookIndex }: { bookIndex: BibleIndex }) {
 
   const handleSelectSearchResult = (result: SearchResult) => {
     setSelectedBookId(result.bookId)
-    setSelectedChapterId(result.chapterId)
-    setTourVerses(null)
-    setView('reader')
     setSearchOpen(false)
+
+    if (result.kind === 'book') {
+      setSelectedChapterId(null)
+      setTourVerses(null)
+      setView('chapters')
+      return
+    }
+
+    setSelectedChapterId(result.chapterId)
+    setTourVerses(result.verseNumber > 0 ? [result.verseNumber, result.verseNumber] : null)
+    setView('reader')
   }
 
   const handlePrevChapter = () => {
