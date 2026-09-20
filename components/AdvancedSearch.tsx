@@ -15,6 +15,7 @@ import {
   highlightMatch,
   MAX_SEARCH_RESULTS,
   searchBible,
+  searchBooks,
 } from '@/lib/bibleSearch'
 
 interface AdvancedSearchProps {
@@ -72,14 +73,22 @@ export default function AdvancedSearch({
   const results = useMemo(() => {
     if (!debouncedQuery.trim()) return []
 
-    return searchBible(bibleData, {
+    const options = {
       query: debouncedQuery,
       testament,
       bookId: bookId || null,
       matchMode,
       caseSensitive,
-    })
+    }
+    const bookResults = searchBooks(bibleData, options)
+    const foundChapterJump = bookResults.some((result) => result.kind === 'verse')
+    const verseResults = foundChapterJump ? [] : searchBible(bibleData, options)
+
+    return [...bookResults, ...verseResults]
   }, [bibleData, debouncedQuery, testament, bookId, matchMode, caseSensitive])
+
+  const bookResults = results.filter((result) => result.kind === 'book')
+  const verseResults = results.filter((result) => result.kind === 'verse')
 
   if (!isOpen) return null
 
@@ -129,7 +138,7 @@ export default function AdvancedSearch({
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search scripture… e.g. love your enemies"
+              placeholder="Search a book or verse… e.g. Genesis, John 3:16"
               className="w-full pl-11 pr-4 py-3 rounded-xl border border-beige-300 dark:border-brown-600 bg-white/80 dark:bg-brown-900/60 text-beige-900 dark:text-brown-100 font-sans text-base focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               autoComplete="off"
             />
@@ -149,8 +158,21 @@ export default function AdvancedSearch({
 
             {debouncedQuery && (
               <span className="text-sm font-sans text-beige-600 dark:text-brown-400">
-                {results.length} result{results.length !== 1 ? 's' : ''}
-                {results.length >= MAX_SEARCH_RESULTS ? ` (showing first ${MAX_SEARCH_RESULTS})` : ''}
+                {bookResults.length > 0 && (
+                  <>
+                    {bookResults.length} book{bookResults.length !== 1 ? 's' : ''}
+                    {verseResults.length > 0 ? ' · ' : ''}
+                  </>
+                )}
+                {verseResults.length > 0 && (
+                  <>
+                    {verseResults.length} verse{verseResults.length !== 1 ? 's' : ''}
+                    {verseResults.length >= MAX_SEARCH_RESULTS
+                      ? ` (showing first ${MAX_SEARCH_RESULTS})`
+                      : ''}
+                  </>
+                )}
+                {results.length === 0 && 'No results'}
               </span>
             )}
           </div>
@@ -228,7 +250,7 @@ export default function AdvancedSearch({
             <div className="text-center py-12 px-4">
               <BookOpen className="w-12 h-12 text-beige-500 dark:text-brown-500 mx-auto mb-4" />
               <p className="text-beige-600 dark:text-brown-400 font-sans">
-                Type a word or phrase to search the entire Bible.
+                Type a book name, a reference, or a phrase to search the Bible.
               </p>
             </div>
           )}
@@ -236,41 +258,86 @@ export default function AdvancedSearch({
           {debouncedQuery.trim() && results.length === 0 && (
             <div className="text-center py-12 px-4">
               <p className="text-beige-700 dark:text-brown-300 font-sans">
-                No verses found for &ldquo;{debouncedQuery}&rdquo;.
+                No books or verses found for &ldquo;{debouncedQuery}&rdquo;.
               </p>
               <p className="text-sm text-beige-500 dark:text-brown-500 font-sans mt-2">
-                Try a different phrase, switch to &ldquo;Any word&rdquo;, or broaden your filters.
+                Try a book name such as Genesis, a reference like John 3:16, or switch to
+                &ldquo;Any word&rdquo;.
               </p>
             </div>
           )}
 
-          <ul className="space-y-2">
-            {results.map((result) => (
-              <li key={`${result.chapterId}-${result.verseNumber}`}>
-                <button
-                  type="button"
-                  onClick={() => onSelectResult(result)}
-                  className="w-full text-left p-4 rounded-xl btn-surface hover:shadow-md transition-all group"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Book className="w-4 h-4 text-amber-700 dark:text-amber-500 shrink-0" />
-                    <span className="font-display font-semibold text-beige-800 dark:text-brown-100 group-hover:text-amber-800 dark:group-hover:text-amber-400">
-                      {result.reference}
-                    </span>
-                    <span className="text-xs font-sans px-2 py-0.5 rounded-full bg-beige-200/70 dark:bg-brown-800/70 text-beige-600 dark:text-brown-400">
-                      {result.testament === 'old' ? 'OT' : 'NT'}
-                    </span>
-                  </div>
-                  <p
-                    className="text-sm md:text-base leading-relaxed text-beige-700 dark:text-brown-300 font-serif line-clamp-3"
-                    dangerouslySetInnerHTML={{
-                      __html: highlightMatch(result.text, debouncedQuery, caseSensitive),
-                    }}
-                  />
-                </button>
-              </li>
-            ))}
-          </ul>
+          {bookResults.length > 0 && (
+            <div className="mb-4">
+              <p className="px-2 pb-2 text-xs font-sans uppercase tracking-wide text-beige-500 dark:text-brown-500">
+                Books
+              </p>
+              <ul className="space-y-2">
+                {bookResults.map((result) => (
+                  <li key={`book-${result.bookId}`}>
+                    <button
+                      type="button"
+                      onClick={() => onSelectResult(result)}
+                      className="w-full text-left p-4 rounded-xl btn-surface hover:shadow-md transition-all group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Book className="w-4 h-4 text-amber-700 dark:text-amber-500 shrink-0" />
+                        <span
+                          className="font-display font-semibold text-beige-800 dark:text-brown-100 group-hover:text-amber-800 dark:group-hover:text-amber-400"
+                          dangerouslySetInnerHTML={{
+                            __html: highlightMatch(result.bookName, debouncedQuery, caseSensitive),
+                          }}
+                        />
+                        <span className="text-xs font-sans px-2 py-0.5 rounded-full bg-beige-200/70 dark:bg-brown-800/70 text-beige-600 dark:text-brown-400">
+                          {result.testament === 'old' ? 'OT' : 'NT'}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-beige-600 dark:text-brown-400 font-sans">
+                        {result.text}
+                      </p>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {verseResults.length > 0 && (
+            <div>
+              {bookResults.length > 0 && (
+                <p className="px-2 pb-2 text-xs font-sans uppercase tracking-wide text-beige-500 dark:text-brown-500">
+                  Verses
+                </p>
+              )}
+              <ul className="space-y-2">
+                {verseResults.map((result) => (
+                  <li key={`${result.chapterId}-${result.verseNumber}`}>
+                    <button
+                      type="button"
+                      onClick={() => onSelectResult(result)}
+                      className="w-full text-left p-4 rounded-xl btn-surface hover:shadow-md transition-all group"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Book className="w-4 h-4 text-amber-700 dark:text-amber-500 shrink-0" />
+                        <span className="font-display font-semibold text-beige-800 dark:text-brown-100 group-hover:text-amber-800 dark:group-hover:text-amber-400">
+                          {result.reference}
+                        </span>
+                        <span className="text-xs font-sans px-2 py-0.5 rounded-full bg-beige-200/70 dark:bg-brown-800/70 text-beige-600 dark:text-brown-400">
+                          {result.testament === 'old' ? 'OT' : 'NT'}
+                        </span>
+                      </div>
+                      <p
+                        className="text-sm md:text-base leading-relaxed text-beige-700 dark:text-brown-300 font-serif line-clamp-3"
+                        dangerouslySetInnerHTML={{
+                          __html: highlightMatch(result.text, debouncedQuery, caseSensitive),
+                        }}
+                      />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </div>
