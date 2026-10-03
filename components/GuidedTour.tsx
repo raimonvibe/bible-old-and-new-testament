@@ -638,7 +638,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
           type="button"
           onClick={start}
           data-read-aloud-ignore
-          className="tour-fab group pointer-events-auto flex min-h-14 items-center gap-2.5 rounded-full px-4 py-3 shadow-lg transition-all hover:scale-[1.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 sm:px-5"
+          className="tour-fab group pointer-events-auto flex min-h-14 items-center gap-2.5 rounded-full px-4 py-3 shadow-lg transition-all hover:scale-[1.03] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 sm:px-5"
           aria-label={tr('Start a guided tour')}
         >
           {!seen && (
@@ -1036,7 +1036,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                     <select
                       value={voiceURI}
                       onChange={(e) => narration.setVoiceURI(e.target.value)}
-                      className="min-h-11 w-full rounded-xl border border-beige-300 bg-white px-3 font-sans text-xs text-beige-900 focus:border-beige-600 focus:outline-none focus:ring-2 focus:ring-beige-400/30 dark:border-brown-600 dark:bg-brown-800 dark:text-brown-50 dark:focus:border-brown-400"
+                      className="min-h-11 w-full rounded-xl border border-beige-300 bg-white px-3 font-sans text-xs text-beige-900 focus:border-beige-600 focus:outline-hidden focus:ring-2 focus:ring-beige-400/30 dark:border-brown-600 dark:bg-brown-800 dark:text-brown-50 dark:focus:border-brown-400"
                     >
                       {groupVoicesByLanguage(narration.voices).map((group) => (
                         <optgroup key={group.label} label={group.label}>
@@ -1070,7 +1070,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                           type="button"
                           onClick={() => narration.setRate(s)}
                           aria-pressed={speechRate === s}
-                          className={`min-h-9 min-w-[3rem] rounded-lg px-2 font-sans text-xs font-medium transition-colors ${
+                          className={`min-h-9 min-w-12 rounded-lg px-2 font-sans text-xs font-medium transition-colors ${
                             speechRate === s
                               ? 'bg-beige-800 text-beige-50 dark:bg-brown-200 dark:text-brown-950'
                               : 'bg-beige-100 text-beige-800 hover:bg-beige-200 dark:bg-brown-800 dark:text-brown-100 dark:hover:bg-brown-700'
@@ -1150,7 +1150,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 <h2
                   ref={headingRef}
                   tabIndex={-1}
-                  className="font-display text-2xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                  className="font-display text-2xl font-bold text-beige-900 outline-hidden dark:text-brown-50"
                 >
                   {tr('Guided Tours')}
                 </h2>
@@ -1259,7 +1259,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 <h2
                   ref={headingRef}
                   tabIndex={-1}
-                  className="font-display text-2xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                  className="font-display text-2xl font-bold text-beige-900 outline-hidden dark:text-brown-50"
                 >
                   {tourIntro.title}
                 </h2>
@@ -1306,7 +1306,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                     <h2
                       ref={headingRef}
                       tabIndex={-1}
-                      className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                      className="font-display text-xl font-bold text-beige-900 outline-hidden dark:text-brown-50"
                     >
                       {moment.title}
                     </h2>
@@ -1363,7 +1363,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                     <h2
                       ref={headingRef}
                       tabIndex={-1}
-                      className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                      className="font-display text-xl font-bold text-beige-900 outline-hidden dark:text-brown-50"
                     >
                       {voice.name}
                     </h2>
@@ -1465,7 +1465,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                   <h2
                     ref={headingRef}
                     tabIndex={-1}
-                    className="font-display text-lg font-bold leading-tight text-beige-900 outline-none dark:text-brown-50"
+                    className="font-display text-lg font-bold leading-tight text-beige-900 outline-hidden dark:text-brown-50"
                   >
                     {moment.synthesis.heading}
                   </h2>
@@ -1534,7 +1534,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                   <h2
                     ref={headingRef}
                     tabIndex={-1}
-                    className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                    className="font-display text-xl font-bold text-beige-900 outline-hidden dark:text-brown-50"
                   >
                     {tourOutro.title}
                   </h2>
@@ -1611,7 +1611,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                 <h2
                   ref={headingRef}
                   tabIndex={-1}
-                  className="font-display text-2xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                  className="font-display text-2xl font-bold text-beige-900 outline-hidden dark:text-brown-50"
                 >
                   {miracleIntro.title}
                 </h2>
@@ -1658,7 +1658,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                     <h2
                       ref={headingRef}
                       tabIndex={-1}
-                      className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                      className="font-display text-xl font-bold text-beige-900 outline-hidden dark:text-brown-50"
                     >
                       {section.title}
                     </h2>
@@ -1718,7 +1718,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                     <h2
                       ref={headingRef}
                       tabIndex={-1}
-                      className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                      className="font-display text-xl font-bold text-beige-900 outline-hidden dark:text-brown-50"
                     >
                       {miracle.title}
                     </h2>
@@ -1826,7 +1826,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                     <h2
                       ref={headingRef}
                       tabIndex={-1}
-                      className="font-display text-lg font-bold leading-tight text-beige-900 outline-none dark:text-brown-50"
+                      className="font-display text-lg font-bold leading-tight text-beige-900 outline-hidden dark:text-brown-50"
                     >
                       {section.synthesis.heading}
                     </h2>
@@ -1886,7 +1886,7 @@ export default function GuidedTour({ onNavigate }: GuidedTourProps) {
                   <h2
                     ref={headingRef}
                     tabIndex={-1}
-                    className="font-display text-xl font-bold text-beige-900 outline-none dark:text-brown-50"
+                    className="font-display text-xl font-bold text-beige-900 outline-hidden dark:text-brown-50"
                   >
                     {miracleOutro.title}
                   </h2>
