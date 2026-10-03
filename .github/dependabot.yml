@@ -1,7 +1,5 @@
 # Dependabot keeps dependencies up to date.
-# Major-version bumps are excluded from the group so they always show up
-# as their own PR to review individually, instead of hiding inside a
-# bundle of otherwise-safe minor/patch updates.
+# Runs every Monday; also kicks off shortly after this file lands on the default branch.
 # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
@@ -14,8 +12,6 @@ updates:
       time: "09:00"
       timezone: Europe/Amsterdam
     open-pull-requests-limit: 5
-    labels:
-      - dependencies
     groups:
       root-dependencies:
         patterns:
