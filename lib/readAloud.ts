@@ -234,8 +234,12 @@ const NOVELTY_VOICE_NAMES = new Set([
   'good news',
   'hysterical',
   'jester',
+  'junior',
+  'kathy',
   'organ',
   'pipe organ',
+  'princess',
+  'ralph',
   'superstar',
   'trinoids',
   'whisper',
@@ -257,21 +261,36 @@ function baseVoiceName(name: string): string {
   return name.split('(')[0].split(' - ')[0].trim().toLowerCase()
 }
 
+/**
+ * "com.apple.speech.synthesis.voice.Bubbles" → "bubbles".
+ *
+ * Safari on iPhone, iPad and Mac can show a voice's name in the device's own
+ * language, so the name alone lets a translated "Bubbles" through. The
+ * voiceURI keeps Apple's English identifier whatever the device language.
+ */
+function voiceURIName(uri: string): string {
+  return (uri ?? '').split('.').pop()?.trim().toLowerCase() ?? ''
+}
+
 export function isNoveltyVoice(voice: SpeechSynthesisVoice): boolean {
-  if (/eloquence/i.test(voice.name)) return true
-  return NOVELTY_VOICE_NAMES.has(baseVoiceName(voice.name))
+  if (/eloquence/i.test(voice.name) || /eloquence/i.test(voice.voiceURI ?? '')) return true
+  return (
+    NOVELTY_VOICE_NAMES.has(baseVoiceName(voice.name)) ||
+    NOVELTY_VOICE_NAMES.has(voiceURIName(voice.voiceURI))
+  )
 }
 
 /**
  * Every genuine voice on the device, best first, across all languages.
- * Falls back to the raw list if a device somehow offers nothing else, so the
- * reader never ends up with an empty picker.
+ *
+ * Never falls back to the novelty voices: with nothing else on offer the list
+ * is empty, no voice is set on the utterance, and the system's own default
+ * voice reads instead.
  */
 export function usableVoices(
   voices: SpeechSynthesisVoice[],
 ): SpeechSynthesisVoice[] {
-  const genuine = voices.filter((v) => !isNoveltyVoice(v))
-  return sortVoices(genuine.length > 0 ? genuine : voices)
+  return sortVoices(voices.filter((v) => !isNoveltyVoice(v)))
 }
 
 /**
